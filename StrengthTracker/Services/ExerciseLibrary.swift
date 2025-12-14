@@ -11,14 +11,31 @@ class ExerciseLibrary {
         // Check if exercises already exist
         let descriptor = FetchDescriptor<Exercise>()
         let existingCount = (try? context.fetchCount(descriptor)) ?? 0
-        guard existingCount == 0 else { return }
+
+        print("🏋️ ExerciseLibrary: Existing exercise count = \(existingCount)")
+
+        guard existingCount == 0 else {
+            print("🏋️ ExerciseLibrary: Exercises already seeded, skipping")
+            return
+        }
 
         let exercises = createAllExercises()
+        print("🏋️ ExerciseLibrary: Creating \(exercises.count) exercises")
+
         for exercise in exercises {
             context.insert(exercise)
         }
 
-        try? context.save()
+        do {
+            try context.save()
+            print("🏋️ ExerciseLibrary: Successfully saved \(exercises.count) exercises")
+
+            // Verify the save worked
+            let verifyCount = (try? context.fetchCount(descriptor)) ?? 0
+            print("🏋️ ExerciseLibrary: Verification count after save = \(verifyCount)")
+        } catch {
+            print("❌ ExerciseLibrary: Failed to save exercises: \(error)")
+        }
     }
 
     private func createAllExercises() -> [Exercise] {

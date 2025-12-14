@@ -62,6 +62,8 @@ An AI-powered iOS strength training app for intermediate lifters. Log workouts f
 | [Views & UI](docs/VIEWS.md) | Screen structure and navigation flow |
 | [Progression Logic](docs/PROGRESSION.md) | Training science and programming rules |
 | [API Reference](docs/API_REFERENCE.md) | LLM provider protocols and response formats |
+| [Developer Guide](docs/DEVELOPER_GUIDE.md) | Development setup and coding conventions |
+| [Plan Compliance](docs/PLAN_COMPLIANCE.md) | Implementation audit against original plan |
 
 ## Technology Stack
 
@@ -117,6 +119,29 @@ StrengthTracker/
 - **Xcode 15+**
 - **iOS 17+**
 - **Swift 5.9+**
+
+## Testing
+
+Run the test suite from Xcode:
+
+```bash
+# Run all tests
+⌘+U in Xcode
+
+# Or via command line
+xcodebuild test -scheme StrengthTracker -destination 'platform=iOS Simulator,name=iPhone 15 Pro'
+```
+
+### Test Coverage
+
+| Test File | Coverage |
+|-----------|----------|
+| `E1RMCalculatorTests.swift` | e1RM calculations, Epley/Brzycki formulas |
+| `PlateMathCalculatorTests.swift` | Plate loading, warmup generation |
+| `ModelTests.swift` | SwiftData entities, relationships, computed properties |
+| `OfflineProgressionEngineTests.swift` | Progression rules, stall detection, insights |
+| `SubstitutionGraphTests.swift` | Exercise substitutions, equipment filtering |
+| `LLMServiceTests.swift` | Context building, response parsing |
 
 ## Optional: LLM API Keys
 

@@ -11,6 +11,14 @@ enum TemplateGenerator {
         let exercises = fetchAllExercises(from: context)
         let availableEquipment = equipment.availableEquipment
 
+        print("📋 TemplateGenerator: Found \(exercises.count) exercises")
+        print("📋 TemplateGenerator: Available equipment: \(availableEquipment.map { $0.rawValue })")
+
+        guard !exercises.isEmpty else {
+            print("⚠️ TemplateGenerator: No exercises found! Templates will be empty.")
+            return
+        }
+
         switch profile.preferredSplit {
         case .upperLower:
             generateUpperLowerSplit(
@@ -248,6 +256,7 @@ enum TemplateGenerator {
         context: ModelContext
     ) {
         var orderIndex = 0
+        print("📋 TemplateGenerator: Adding exercises to '\(template.name)'")
 
         for spec in specs {
             if let exercise = findExerciseOrSubstitute(
@@ -265,8 +274,13 @@ enum TemplateGenerator {
                 templateExercise.template = template
                 template.exercises.append(templateExercise)
                 context.insert(templateExercise)
+                print("   ✅ Added: \(exercise.name) (index \(orderIndex))")
                 orderIndex += 1
+            } else {
+                print("   ❌ Could not find: \(spec.name) or fallbacks: \(spec.fallbacks)")
             }
         }
+
+        print("📋 TemplateGenerator: Template '\(template.name)' now has \(template.exercises.count) exercises")
     }
 }
