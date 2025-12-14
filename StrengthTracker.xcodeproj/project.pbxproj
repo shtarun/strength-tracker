@@ -1,0 +1,595 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		001 /* StrengthTrackerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 101; };
+		002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 102; };
+		003 /* Goal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 103; };
+		004 /* Split.swift in Sources */ = {isa = PBXBuildFile; fileRef = 104; };
+		005 /* Location.swift in Sources */ = {isa = PBXBuildFile; fileRef = 105; };
+		006 /* MovementPattern.swift in Sources */ = {isa = PBXBuildFile; fileRef = 106; };
+		007 /* Muscle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 107; };
+		008 /* Equipment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 108; };
+		009 /* SetType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 109; };
+		010 /* ProgressionType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110; };
+		011 /* Readiness.swift in Sources */ = {isa = PBXBuildFile; fileRef = 111; };
+		012 /* UnitSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 112; };
+		013 /* LLMProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 113; };
+		014 /* UserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 114; };
+		015 /* EquipmentProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 115; };
+		016 /* Exercise.swift in Sources */ = {isa = PBXBuildFile; fileRef = 116; };
+		017 /* WorkoutTemplate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 117; };
+		018 /* WorkoutSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 118; };
+		019 /* WorkoutSet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 119; };
+		020 /* PainFlag.swift in Sources */ = {isa = PBXBuildFile; fileRef = 120; };
+		021 /* E1RMCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 121; };
+		022 /* PlateMathCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 122; };
+		023 /* ExerciseLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 123; };
+		024 /* SubstitutionGraph.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124; };
+		025 /* TemplateGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 125; };
+		026 /* LLMService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 126; };
+		027 /* ClaudeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 127; };
+		028 /* OpenAIProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 128; };
+		029 /* OfflineProgressionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 129; };
+		030 /* OnboardingFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 130; };
+		031 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 131; };
+		032 /* ReadinessCheckSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132; };
+		033 /* WorkoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 133; };
+		034 /* RestTimerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 134; };
+		035 /* WorkoutSummarySheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 135; };
+		036 /* ExerciseDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 136; };
+		037 /* TemplatesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 137; };
+		038 /* ProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 138; };
+		039 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 139; };
+		040 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 140; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		100 /* StrengthTracker.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = StrengthTracker.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		101 /* StrengthTrackerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrengthTrackerApp.swift; sourceTree = "<group>"; };
+		102 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		103 /* Goal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Goal.swift; sourceTree = "<group>"; };
+		104 /* Split.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Split.swift; sourceTree = "<group>"; };
+		105 /* Location.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Location.swift; sourceTree = "<group>"; };
+		106 /* MovementPattern.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovementPattern.swift; sourceTree = "<group>"; };
+		107 /* Muscle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Muscle.swift; sourceTree = "<group>"; };
+		108 /* Equipment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Equipment.swift; sourceTree = "<group>"; };
+		109 /* SetType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetType.swift; sourceTree = "<group>"; };
+		110 /* ProgressionType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressionType.swift; sourceTree = "<group>"; };
+		111 /* Readiness.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Readiness.swift; sourceTree = "<group>"; };
+		112 /* UnitSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnitSystem.swift; sourceTree = "<group>"; };
+		113 /* LLMProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMProvider.swift; sourceTree = "<group>"; };
+		114 /* UserProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfile.swift; sourceTree = "<group>"; };
+		115 /* EquipmentProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EquipmentProfile.swift; sourceTree = "<group>"; };
+		116 /* Exercise.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Exercise.swift; sourceTree = "<group>"; };
+		117 /* WorkoutTemplate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutTemplate.swift; sourceTree = "<group>"; };
+		118 /* WorkoutSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutSession.swift; sourceTree = "<group>"; };
+		119 /* WorkoutSet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutSet.swift; sourceTree = "<group>"; };
+		120 /* PainFlag.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PainFlag.swift; sourceTree = "<group>"; };
+		121 /* E1RMCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = E1RMCalculator.swift; sourceTree = "<group>"; };
+		122 /* PlateMathCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlateMathCalculator.swift; sourceTree = "<group>"; };
+		123 /* ExerciseLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseLibrary.swift; sourceTree = "<group>"; };
+		124 /* SubstitutionGraph.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubstitutionGraph.swift; sourceTree = "<group>"; };
+		125 /* TemplateGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemplateGenerator.swift; sourceTree = "<group>"; };
+		126 /* LLMService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMService.swift; sourceTree = "<group>"; };
+		127 /* ClaudeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeProvider.swift; sourceTree = "<group>"; };
+		128 /* OpenAIProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIProvider.swift; sourceTree = "<group>"; };
+		129 /* OfflineProgressionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineProgressionEngine.swift; sourceTree = "<group>"; };
+		130 /* OnboardingFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingFlow.swift; sourceTree = "<group>"; };
+		131 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		132 /* ReadinessCheckSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadinessCheckSheet.swift; sourceTree = "<group>"; };
+		133 /* WorkoutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutView.swift; sourceTree = "<group>"; };
+		134 /* RestTimerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestTimerSheet.swift; sourceTree = "<group>"; };
+		135 /* WorkoutSummarySheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutSummarySheet.swift; sourceTree = "<group>"; };
+		136 /* ExerciseDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseDetailView.swift; sourceTree = "<group>"; };
+		137 /* TemplatesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemplatesView.swift; sourceTree = "<group>"; };
+		138 /* ProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressView.swift; sourceTree = "<group>"; };
+		139 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
+		140 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		200 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		300 = {
+			isa = PBXGroup;
+			children = (
+				301 /* StrengthTracker */,
+				302 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		301 /* StrengthTracker */ = {
+			isa = PBXGroup;
+			children = (
+				303 /* App */,
+				304 /* Models */,
+				305 /* Agent */,
+				306 /* Services */,
+				307 /* Utilities */,
+				308 /* Views */,
+				140 /* Assets.xcassets */,
+			);
+			path = StrengthTracker;
+			sourceTree = "<group>";
+		};
+		302 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				100 /* StrengthTracker.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		303 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				101 /* StrengthTrackerApp.swift */,
+				102 /* ContentView.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		304 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				309 /* Enums */,
+				114 /* UserProfile.swift */,
+				115 /* EquipmentProfile.swift */,
+				116 /* Exercise.swift */,
+				117 /* WorkoutTemplate.swift */,
+				118 /* WorkoutSession.swift */,
+				119 /* WorkoutSet.swift */,
+				120 /* PainFlag.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		305 /* Agent */ = {
+			isa = PBXGroup;
+			children = (
+				126 /* LLMService.swift */,
+				127 /* ClaudeProvider.swift */,
+				128 /* OpenAIProvider.swift */,
+				129 /* OfflineProgressionEngine.swift */,
+			);
+			path = Agent;
+			sourceTree = "<group>";
+		};
+		306 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				123 /* ExerciseLibrary.swift */,
+				124 /* SubstitutionGraph.swift */,
+				125 /* TemplateGenerator.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		307 /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+				121 /* E1RMCalculator.swift */,
+				122 /* PlateMathCalculator.swift */,
+			);
+			path = Utilities;
+			sourceTree = "<group>";
+		};
+		308 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				310 /* Onboarding */,
+				311 /* Home */,
+				312 /* Workout */,
+				313 /* Exercise */,
+				314 /* Templates */,
+				315 /* Progress */,
+				316 /* Profile */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		309 /* Enums */ = {
+			isa = PBXGroup;
+			children = (
+				103 /* Goal.swift */,
+				104 /* Split.swift */,
+				105 /* Location.swift */,
+				106 /* MovementPattern.swift */,
+				107 /* Muscle.swift */,
+				108 /* Equipment.swift */,
+				109 /* SetType.swift */,
+				110 /* ProgressionType.swift */,
+				111 /* Readiness.swift */,
+				112 /* UnitSystem.swift */,
+				113 /* LLMProvider.swift */,
+			);
+			path = Enums;
+			sourceTree = "<group>";
+		};
+		310 /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				130 /* OnboardingFlow.swift */,
+			);
+			path = Onboarding;
+			sourceTree = "<group>";
+		};
+		311 /* Home */ = {
+			isa = PBXGroup;
+			children = (
+				131 /* HomeView.swift */,
+				132 /* ReadinessCheckSheet.swift */,
+			);
+			path = Home;
+			sourceTree = "<group>";
+		};
+		312 /* Workout */ = {
+			isa = PBXGroup;
+			children = (
+				133 /* WorkoutView.swift */,
+				134 /* RestTimerSheet.swift */,
+				135 /* WorkoutSummarySheet.swift */,
+			);
+			path = Workout;
+			sourceTree = "<group>";
+		};
+		313 /* Exercise */ = {
+			isa = PBXGroup;
+			children = (
+				136 /* ExerciseDetailView.swift */,
+			);
+			path = Exercise;
+			sourceTree = "<group>";
+		};
+		314 /* Templates */ = {
+			isa = PBXGroup;
+			children = (
+				137 /* TemplatesView.swift */,
+			);
+			path = Templates;
+			sourceTree = "<group>";
+		};
+		315 /* Progress */ = {
+			isa = PBXGroup;
+			children = (
+				138 /* ProgressView.swift */,
+			);
+			path = Progress;
+			sourceTree = "<group>";
+		};
+		316 /* Profile */ = {
+			isa = PBXGroup;
+			children = (
+				139 /* ProfileView.swift */,
+			);
+			path = Profile;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		400 /* StrengthTracker */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 500;
+			buildPhases = (
+				401 /* Sources */,
+				200 /* Frameworks */,
+				402 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = StrengthTracker;
+			productName = StrengthTracker;
+			productReference = 100 /* StrengthTracker.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		600 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					400 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+				};
+			};
+			buildConfigurationList = 601;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 300;
+			productRefGroup = 302 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				400 /* StrengthTracker */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		402 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				040 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		401 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				001 /* StrengthTrackerApp.swift in Sources */,
+				002 /* ContentView.swift in Sources */,
+				003 /* Goal.swift in Sources */,
+				004 /* Split.swift in Sources */,
+				005 /* Location.swift in Sources */,
+				006 /* MovementPattern.swift in Sources */,
+				007 /* Muscle.swift in Sources */,
+				008 /* Equipment.swift in Sources */,
+				009 /* SetType.swift in Sources */,
+				010 /* ProgressionType.swift in Sources */,
+				011 /* Readiness.swift in Sources */,
+				012 /* UnitSystem.swift in Sources */,
+				013 /* LLMProvider.swift in Sources */,
+				014 /* UserProfile.swift in Sources */,
+				015 /* EquipmentProfile.swift in Sources */,
+				016 /* Exercise.swift in Sources */,
+				017 /* WorkoutTemplate.swift in Sources */,
+				018 /* WorkoutSession.swift in Sources */,
+				019 /* WorkoutSet.swift in Sources */,
+				020 /* PainFlag.swift in Sources */,
+				021 /* E1RMCalculator.swift in Sources */,
+				022 /* PlateMathCalculator.swift in Sources */,
+				023 /* ExerciseLibrary.swift in Sources */,
+				024 /* SubstitutionGraph.swift in Sources */,
+				025 /* TemplateGenerator.swift in Sources */,
+				026 /* LLMService.swift in Sources */,
+				027 /* ClaudeProvider.swift in Sources */,
+				028 /* OpenAIProvider.swift in Sources */,
+				029 /* OfflineProgressionEngine.swift in Sources */,
+				030 /* OnboardingFlow.swift in Sources */,
+				031 /* HomeView.swift in Sources */,
+				032 /* ReadinessCheckSheet.swift in Sources */,
+				033 /* WorkoutView.swift in Sources */,
+				034 /* RestTimerSheet.swift in Sources */,
+				035 /* WorkoutSummarySheet.swift in Sources */,
+				036 /* ExerciseDetailView.swift in Sources */,
+				037 /* TemplatesView.swift in Sources */,
+				038 /* ProgressView.swift in Sources */,
+				039 /* ProfileView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		700 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		701 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		702 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.yourcompany.StrengthTracker;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		703 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.yourcompany.StrengthTracker;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		500 /* Build configuration list for PBXNativeTarget "StrengthTracker" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				702 /* Debug */,
+				703 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		601 /* Build configuration list for PBXProject "StrengthTracker" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				700 /* Debug */,
+				701 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 600 /* Project object */;
+}
