@@ -10,6 +10,7 @@ struct ExerciseDetailView: View {
     let exercise: Exercise
 
     @State private var showPainFlagSheet = false
+    @State private var showFormGuidance = false
 
     private var profile: UserProfile? { userProfiles.first }
     private var unitSystem: UnitSystem { profile?.unitSystem ?? .metric }
@@ -104,6 +105,24 @@ struct ExerciseDetailView: View {
                                 .clipShape(Capsule())
                         }
                     }
+                    
+                    // Form Guidance Button
+                    if exercise.hasFormGuidance {
+                        HStack {
+                            Spacer()
+                            Button {
+                                showFormGuidance = true
+                            } label: {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "info.circle.fill")
+                                    Text("Form Tips")
+                                        .font(.caption.weight(.medium))
+                                }
+                                .foregroundStyle(.blue)
+                            }
+                        }
+                        .padding(.top, 4)
+                    }
                 }
                 .padding()
                 .background(Color(.systemGray6))
@@ -182,6 +201,9 @@ struct ExerciseDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showPainFlagSheet) {
             PainFlagSheet(exercise: exercise)
+        }
+        .sheet(isPresented: $showFormGuidance) {
+            FormGuidanceSheet(exercise: exercise)
         }
     }
 }
@@ -350,6 +372,139 @@ struct PainFlagSheet: View {
             }
         }
         .presentationDetents([.medium])
+    }
+}
+
+// MARK: - Form Guidance Sheet
+struct FormGuidanceSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    let exercise: Exercise
+    
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+                    // Form Cues Section
+                    if !exercise.formCues.isEmpty {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Label("Form Cues", systemImage: "checkmark.circle.fill")
+                                .font(.headline)
+                                .foregroundStyle(.green)
+                            
+                            VStack(alignment: .leading, spacing: 10) {
+                                ForEach(exercise.formCues, id: \.self) { cue in
+                                    HStack(alignment: .top, spacing: 12) {
+                                        Image(systemName: "checkmark")
+                                            .font(.caption.bold())
+                                            .foregroundStyle(.green)
+                                            .frame(width: 20)
+                                        
+                                        Text(cue)
+                                            .font(.subheadline)
+                                    }
+                                }
+                            }
+                        }
+                        .padding()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color.green.opacity(0.1))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                    
+                    // Common Mistakes Section
+                    if !exercise.commonMistakes.isEmpty {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Label("Common Mistakes", systemImage: "exclamationmark.triangle.fill")
+                                .font(.headline)
+                                .foregroundStyle(.orange)
+                            
+                            VStack(alignment: .leading, spacing: 10) {
+                                ForEach(exercise.commonMistakes, id: \.self) { mistake in
+                                    HStack(alignment: .top, spacing: 12) {
+                                        Image(systemName: "xmark")
+                                            .font(.caption.bold())
+                                            .foregroundStyle(.orange)
+                                            .frame(width: 20)
+                                        
+                                        Text(mistake)
+                                            .font(.subheadline)
+                                    }
+                                }
+                            }
+                        }
+                        .padding()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color.orange.opacity(0.1))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                    
+                    // Equipment info
+                    if !exercise.equipmentRequired.isEmpty {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Label("Equipment Needed", systemImage: "dumbbell.fill")
+                                .font(.headline)
+                                .foregroundStyle(.blue)
+                            
+                            HStack(spacing: 8) {
+                                ForEach(exercise.equipmentRequired, id: \.self) { equipment in
+                                    HStack(spacing: 4) {
+                                        Image(systemName: equipment.icon)
+                                            .font(.caption)
+                                        Text(equipment.rawValue)
+                                            .font(.caption)
+                                    }
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 6)
+                                    .background(Color.blue.opacity(0.1))
+                                    .clipShape(Capsule())
+                                }
+                            }
+                        }
+                        .padding()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color(.systemGray6))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                    
+                    // Duration for mobility/cardio
+                    if let duration = exercise.durationSeconds {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Label("Recommended Duration", systemImage: "timer")
+                                .font(.headline)
+                                .foregroundStyle(.purple)
+                            
+                            Text(formatDuration(duration))
+                                .font(.title2.bold())
+                        }
+                        .padding()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color.purple.opacity(0.1))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                }
+                .padding()
+            }
+            .navigationTitle("Form Guide")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+    }
+    
+    private func formatDuration(_ seconds: Int) -> String {
+        if seconds >= 60 {
+            let minutes = seconds / 60
+            let remainingSeconds = seconds % 60
+            if remainingSeconds == 0 {
+                return "\(minutes) min"
+            }
+            return "\(minutes) min \(remainingSeconds) sec"
+        }
+        return "\(seconds) seconds"
     }
 }
 
