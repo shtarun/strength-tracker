@@ -10,29 +10,34 @@ class ExerciseLibrary {
     func seedExercises(in context: ModelContext) {
         // Check if exercises already exist
         let descriptor = FetchDescriptor<Exercise>()
-        let existingCount = (try? context.fetchCount(descriptor)) ?? 0
+        let existingExercises = (try? context.fetch(descriptor)) ?? []
+        let existingNames = Set(existingExercises.map { $0.name })
 
-        print("🏋️ ExerciseLibrary: Existing exercise count = \(existingCount)")
+        print("🏋️ ExerciseLibrary: Existing exercise count = \(existingExercises.count)")
 
-        guard existingCount == 0 else {
-            print("🏋️ ExerciseLibrary: Exercises already seeded, skipping")
+        let allExercises = createAllExercises()
+        
+        // Find exercises that don't exist yet
+        let newExercises = allExercises.filter { !existingNames.contains($0.name) }
+        
+        if newExercises.isEmpty {
+            print("🏋️ ExerciseLibrary: All exercises already seeded, skipping")
             return
         }
+        
+        print("🏋️ ExerciseLibrary: Adding \(newExercises.count) new exercises")
 
-        let exercises = createAllExercises()
-        print("🏋️ ExerciseLibrary: Creating \(exercises.count) exercises")
-
-        for exercise in exercises {
+        for exercise in newExercises {
             context.insert(exercise)
         }
 
         do {
             try context.save()
-            print("🏋️ ExerciseLibrary: Successfully saved \(exercises.count) exercises")
+            print("🏋️ ExerciseLibrary: Successfully saved \(newExercises.count) new exercises")
 
             // Verify the save worked
             let verifyCount = (try? context.fetchCount(descriptor)) ?? 0
-            print("🏋️ ExerciseLibrary: Verification count after save = \(verifyCount)")
+            print("🏋️ ExerciseLibrary: Total exercise count after save = \(verifyCount)")
         } catch {
             print("❌ ExerciseLibrary: Failed to save exercises: \(error)")
         }
@@ -1184,6 +1189,133 @@ class ExerciseLibrary {
             commonMistakes: [
                 "Hunching shoulders",
                 "Leaning to one side"
+            ]
+        ))
+        
+        // MARK: - Additional Carry Exercises
+        exercises.append(Exercise(
+            name: "Dumbbell Farmer Walk",
+            movementPattern: .carry,
+            primaryMuscles: [.traps, .forearms, .core],
+            secondaryMuscles: [.glutes],
+            equipmentRequired: [.dumbbell],
+            isCompound: true,
+            defaultProgressionType: .straightSets,
+            formCues: [
+                "Hold dumbbells at sides with neutral grip",
+                "Stand tall, shoulders back and down",
+                "Walk with short, controlled steps",
+                "Brace core, don't let weights swing"
+            ],
+            commonMistakes: [
+                "Letting weights swing",
+                "Hunching shoulders up",
+                "Taking too long of strides"
+            ]
+        ))
+        
+        exercises.append(Exercise(
+            name: "Suitcase Carry",
+            movementPattern: .carry,
+            primaryMuscles: [.core],
+            secondaryMuscles: [.traps, .forearms],
+            equipmentRequired: [.dumbbell],
+            isCompound: true,
+            defaultProgressionType: .straightSets,
+            formCues: [
+                "Hold single dumbbell/kettlebell at one side",
+                "Stay perfectly upright - no leaning",
+                "Brace obliques to resist lateral flexion",
+                "Walk with controlled steps"
+            ],
+            commonMistakes: [
+                "Leaning away from weight",
+                "Letting hip drop on loaded side",
+                "Shrugging shoulder"
+            ]
+        ))
+        
+        exercises.append(Exercise(
+            name: "Overhead Carry",
+            movementPattern: .carry,
+            primaryMuscles: [.frontDelt, .sideDelt, .core],
+            secondaryMuscles: [.triceps, .traps],
+            equipmentRequired: [.dumbbell],
+            isCompound: true,
+            defaultProgressionType: .straightSets,
+            formCues: [
+                "Press weight(s) overhead, lock out arms",
+                "Keep ribs down, don't arch back",
+                "Engage core and walk slowly",
+                "Keep biceps by ears"
+            ],
+            commonMistakes: [
+                "Arching lower back",
+                "Letting arms drift forward",
+                "Walking too fast"
+            ]
+        ))
+        
+        exercises.append(Exercise(
+            name: "Rack Carry",
+            movementPattern: .carry,
+            primaryMuscles: [.core, .biceps],
+            secondaryMuscles: [.forearms, .frontDelt],
+            equipmentRequired: [.kettlebell],
+            isCompound: true,
+            defaultProgressionType: .straightSets,
+            formCues: [
+                "Clean kettlebells to rack position",
+                "Elbows tight to body",
+                "Stay tall through torso",
+                "Walk with controlled steps"
+            ],
+            commonMistakes: [
+                "Letting elbows flare out",
+                "Rounding upper back",
+                "Holding breath"
+            ]
+        ))
+        
+        exercises.append(Exercise(
+            name: "Trap Bar Carry",
+            movementPattern: .carry,
+            primaryMuscles: [.traps, .forearms, .core],
+            secondaryMuscles: [.glutes, .quads],
+            equipmentRequired: [.barbell],
+            isCompound: true,
+            defaultProgressionType: .straightSets,
+            formCues: [
+                "Deadlift trap bar to standing",
+                "Stand tall, chest up",
+                "Walk with small, controlled steps",
+                "Keep weight balanced"
+            ],
+            commonMistakes: [
+                "Rounding back",
+                "Taking too large steps",
+                "Looking down"
+            ]
+        ))
+        
+        exercises.append(Exercise(
+            name: "Waiter Carry",
+            movementPattern: .carry,
+            primaryMuscles: [.frontDelt, .sideDelt, .core],
+            secondaryMuscles: [.triceps],
+            equipmentRequired: [.kettlebell],
+            isCompound: true,
+            defaultProgressionType: .straightSets,
+            formCues: [
+                "Hold kettlebell bottoms-up overhead",
+                "Wrist straight, grip tight",
+                "Walk slowly and controlled",
+                "Keep shoulder packed and stable"
+            ],
+            commonMistakes: [
+                "Letting wrist bend back",
+                "Walking too fast",
+                "Not engaging shoulder stability"
             ]
         ))
         

@@ -17,8 +17,34 @@ struct StrengthTrackerApp: App {
                 WorkoutSet.self,
                 PainFlag.self
             ])
+            
+            // Try to create container, if it fails due to schema mismatch, delete and recreate
             let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-            modelContainer = try ModelContainer(for: schema, configurations: [modelConfiguration])
+            
+            do {
+                modelContainer = try ModelContainer(for: schema, configurations: [modelConfiguration])
+            } catch {
+                // Schema migration failed - delete existing store and try again
+                print("Schema migration failed: \(error). Recreating database...")
+                
+                // Get the default store URL
+                let url = URL.applicationSupportDirectory.appending(path: "default.store")
+                
+                // Delete existing files
+                let fileManager = FileManager.default
+                let storePaths = [
+                    url.path,
+                    url.path + "-shm",
+                    url.path + "-wal"
+                ]
+                
+                for path in storePaths {
+                    try? fileManager.removeItem(atPath: path)
+                }
+                
+                // Try again with fresh store
+                modelContainer = try ModelContainer(for: schema, configurations: [modelConfiguration])
+            }
         } catch {
             fatalError("Could not create ModelContainer: \(error)")
         }

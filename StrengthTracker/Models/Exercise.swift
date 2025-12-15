@@ -14,9 +14,9 @@ final class Exercise {
     var instructions: String?
     var formCuesData: Data?
     var commonMistakesData: Data?
-    var isMobilityRoutine: Bool
-    var routineType: String? // "pre-workout", "post-workout", nil for exercises
-    var durationSeconds: Int? // For mobility/cardio exercises
+    var isMobilityRoutine: Bool = false
+    var routineType: String? = nil
+    var durationSeconds: Int? = nil
 
     init(
         id: UUID = UUID(),

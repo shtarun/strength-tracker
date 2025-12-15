@@ -16,6 +16,16 @@ An AI-powered iOS strength training app for intermediate lifters. Log workouts f
 - **Warmup generation** - Automatic warmup sets with collapsible display
 - **Workout swap** - Easily switch to a different workout from the home screen
 
+### 🏃 Comprehensive Exercise Library
+- **100+ exercises** - Covering all major movement patterns
+- **Kettlebell exercises** - Swings, goblet squats, Turkish get-ups, and more
+- **Resistance band exercises** - Pull-aparts, face pulls, band squats, etc.
+- **Cardio exercises** - Treadmill, bike, rowing, battle ropes, jump rope
+- **Carry exercises** - Farmer walks, suitcase carry, overhead carry, rack carry
+- **Pre-workout mobility** - Cat-cow, world's greatest stretch, hip circles
+- **Post-workout stretches** - Pigeon pose, couch stretch, foam rolling routines
+- **Form guidance** - Interactive form tips with cues and common mistakes for each exercise
+
 ### 🤖 AI-Powered Coaching
 - **Intelligent progression** - Calculates optimal weight/rep targets for each session
 - **Readiness adaptation** - Adjusts intensity based on energy, soreness, and time available
