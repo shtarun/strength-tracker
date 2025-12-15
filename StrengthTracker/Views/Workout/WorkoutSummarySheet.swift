@@ -4,6 +4,7 @@ struct WorkoutSummarySheet: View {
     let template: WorkoutTemplate
     let exerciseSets: [UUID: [WorkoutSet]]
     let startTime: Date
+    let provider: LLMProviderType
     let onSave: () -> Void
     let onDiscard: () -> Void
 
@@ -190,7 +191,7 @@ struct WorkoutSummarySheet: View {
             do {
                 insight = try await LLMService.shared.generateInsight(
                     session: summary,
-                    provider: .offline // Use offline for quick response
+                    provider: provider
                 )
             } catch {
                 print("Failed to generate insight: \(error)")
@@ -231,6 +232,7 @@ struct SummaryStat: View {
         template: WorkoutTemplate(name: "Upper A", dayNumber: 1),
         exerciseSets: [:],
         startTime: Date().addingTimeInterval(-3600),
+        provider: .offline,
         onSave: {},
         onDiscard: {}
     )

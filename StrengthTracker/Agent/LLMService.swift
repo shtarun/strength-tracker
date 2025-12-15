@@ -7,6 +7,7 @@ protocol LLMProvider {
     func generatePlan(context: CoachContext) async throws -> TodayPlanResponse
     func generateInsight(session: SessionSummary) async throws -> InsightResponse
     func analyzeStall(context: StallContext) async throws -> StallAnalysisResponse
+    func generateWeeklyReview(context: WeeklyReviewContext) async throws -> WeeklyReviewResponse
 }
 
 // MARK: - Request/Response Types
@@ -143,6 +144,30 @@ struct StallAnalysisResponse: Codable {
     let details: String?
 }
 
+struct WeeklyReviewResponse: Codable {
+    let summary: String
+    let highlights: [String]
+    let areasToImprove: [String]
+    let recommendation: String
+    let consistencyScore: Int // 1-10
+}
+
+struct WeeklyReviewContext: Codable {
+    let workoutCount: Int
+    let totalVolume: Double
+    let averageDuration: Int
+    let exerciseHighlights: [WeeklyExerciseHighlight]
+    let userGoal: String
+}
+
+struct WeeklyExerciseHighlight: Codable {
+    let exerciseName: String
+    let sessions: Int
+    let bestE1RM: Double
+    let previousBestE1RM: Double?
+    let totalVolume: Double
+}
+
 // MARK: - LLM Service Manager
 
 @MainActor
@@ -230,6 +255,24 @@ class LLMService: ObservableObject {
         }
 
         return await offlineEngine.analyzeStall(context: context)
+    }
+
+    func generateWeeklyReview(
+        context: WeeklyReviewContext,
+        provider: LLMProviderType
+    ) async throws -> WeeklyReviewResponse {
+        isLoading = true
+        defer { isLoading = false }
+
+        if provider != .offline, let llmProvider = getProvider(for: provider) {
+            do {
+                return try await llmProvider.generateWeeklyReview(context: context)
+            } catch {
+                lastError = "LLM unavailable, using offline mode"
+            }
+        }
+
+        return await offlineEngine.generateWeeklyReview(context: context)
     }
 }
 
@@ -324,6 +367,32 @@ enum CoachPrompts {
       "suggestedFix": "string or null",
       "fixType": "deload" | "rep_range" | "variation" | "volume" | null,
       "details": "string or null"
+    }
+    """
+
+    static let weeklyReviewPrompt = """
+    Generate a weekly training review based on the completed workouts.
+
+    Analyze:
+    - Consistency (workouts completed vs expected)
+    - Progress (PRs, e1RM improvements)
+    - Volume trends (increasing, stable, decreasing)
+    - Recovery signals (RPE trends, missed reps)
+
+    Provide:
+    - A brief summary paragraph
+    - 2-3 highlights (positive things)
+    - 1-2 areas to improve
+    - One actionable recommendation for next week
+    - A consistency score (1-10)
+
+    Respond with valid JSON:
+    {
+      "summary": "string (2-3 sentences)",
+      "highlights": ["string"],
+      "areasToImprove": ["string"],
+      "recommendation": "string (one actionable item)",
+      "consistencyScore": number
     }
     """
 }

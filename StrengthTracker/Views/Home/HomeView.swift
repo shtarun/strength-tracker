@@ -9,12 +9,20 @@ struct HomeView: View {
 
     @State private var showReadinessCheck = false
     @State private var showActiveWorkout = false
+    @State private var showWorkoutPicker = false
     @State private var selectedTemplate: WorkoutTemplate?
     @State private var todayPlan: TodayPlanResponse?
     @State private var isGeneratingPlan = false
+    @State private var manuallySelectedTemplate: WorkoutTemplate?
 
     private var profile: UserProfile? { userProfiles.first }
     private var nextTemplate: WorkoutTemplate? {
+        // If user manually selected a template, use that
+        if let manual = manuallySelectedTemplate {
+            return manual
+        }
+        
+        // Otherwise, auto-select based on last workout
         guard let lastSession = recentSessions.first,
               let lastTemplate = lastSession.template,
               let index = templates.firstIndex(where: { $0.id == lastTemplate.id }) else {
@@ -37,10 +45,14 @@ struct HomeView: View {
                     if let template = nextTemplate {
                         TodayWorkoutCard(
                             template: template,
+                            allTemplates: templates,
                             isLoading: isGeneratingPlan,
                             onStart: {
                                 selectedTemplate = template
                                 showReadinessCheck = true
+                            },
+                            onSwap: {
+                                showWorkoutPicker = true
                             }
                         )
                     } else if templates.isEmpty {
@@ -80,6 +92,17 @@ struct HomeView: View {
                         plan: todayPlan
                     )
                 }
+            }
+            .sheet(isPresented: $showWorkoutPicker) {
+                WorkoutPickerSheet(
+                    templates: templates,
+                    currentTemplate: nextTemplate,
+                    onSelect: { template in
+                        manuallySelectedTemplate = template
+                        showWorkoutPicker = false
+                    }
+                )
+                .presentationDetents([.medium, .large])
             }
         }
     }
@@ -236,8 +259,10 @@ struct GreetingCard: View {
 
 struct TodayWorkoutCard: View {
     let template: WorkoutTemplate
+    let allTemplates: [WorkoutTemplate]
     let isLoading: Bool
     let onStart: () -> Void
+    let onSwap: () -> Void
     
     @State private var isExpanded = false
 
@@ -252,6 +277,18 @@ struct TodayWorkoutCard: View {
                         .font(.title2.bold())
                 }
                 Spacer()
+
+                // Swap button (only if more than one template)
+                if allTemplates.count > 1 {
+                    Button(action: onSwap) {
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                            .font(.body)
+                            .foregroundStyle(.blue)
+                            .padding(8)
+                            .background(Color(.systemGray6))
+                            .clipShape(Circle())
+                    }
+                }
 
                 Text("\(template.targetDuration) min")
                     .font(.subheadline)
@@ -520,6 +557,113 @@ struct RecentWorkoutRow: View {
         .padding()
         .background(Color(.systemGray6))
         .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+}
+
+// MARK: - Workout Picker Sheet
+
+struct WorkoutPickerSheet: View {
+    let templates: [WorkoutTemplate]
+    let currentTemplate: WorkoutTemplate?
+    let onSelect: (WorkoutTemplate) -> Void
+    
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    ForEach(templates) { template in
+                        WorkoutPickerRow(
+                            template: template,
+                            isSelected: template.id == currentTemplate?.id,
+                            onSelect: {
+                                onSelect(template)
+                            }
+                        )
+                    }
+                } header: {
+                    Text("Choose a workout")
+                } footer: {
+                    Text("Tap to select a different workout for today")
+                        .font(.caption)
+                }
+            }
+            .navigationTitle("Swap Workout")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+}
+
+struct WorkoutPickerRow: View {
+    let template: WorkoutTemplate
+    let isSelected: Bool
+    let onSelect: () -> Void
+    
+    var body: some View {
+        Button(action: onSelect) {
+            HStack {
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Text(template.name)
+                            .font(.headline)
+                            .foregroundStyle(.primary)
+                        
+                        if isSelected {
+                            Text("Current")
+                                .font(.caption2)
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Color.blue)
+                                .clipShape(Capsule())
+                        }
+                    }
+                    
+                    HStack(spacing: 12) {
+                        Label("\(template.exercises.count) exercises", systemImage: "dumbbell")
+                        Label("\(template.targetDuration) min", systemImage: "clock")
+                    }
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    
+                    // Show first few exercises
+                    if !template.sortedExercises.isEmpty {
+                        let exerciseNames = template.sortedExercises.prefix(3)
+                            .compactMap { $0.exercise?.name }
+                            .joined(separator: ", ")
+                        let remaining = template.exercises.count - 3
+                        let suffix = remaining > 0 ? " +\(remaining) more" : ""
+                        
+                        Text(exerciseNames + suffix)
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                            .lineLimit(1)
+                    }
+                }
+                
+                Spacer()
+                
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(.blue)
+                        .font(.title2)
+                } else {
+                    Image(systemName: "circle")
+                        .foregroundStyle(.secondary)
+                        .font(.title2)
+                }
+            }
+            .padding(.vertical, 4)
+        }
+        .buttonStyle(.plain)
     }
 }
 

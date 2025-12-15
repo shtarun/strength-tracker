@@ -13,23 +13,37 @@ An AI-powered iOS strength training app for intermediate lifters. Log workouts f
 - **Quick set entry** - Log weight, reps, and RPE with minimal taps
 - **Auto-populated targets** - Next set suggestions based on your history
 - **Rest timer** - Configurable countdown between sets
-- **Warmup generation** - Automatic warmup sets calculated from your working weight
+- **Warmup generation** - Automatic warmup sets with collapsible display
+- **Workout swap** - Easily switch to a different workout from the home screen
 
 ### 🤖 AI-Powered Coaching
 - **Intelligent progression** - Calculates optimal weight/rep targets for each session
-- **Readiness adaptation** - Adjusts intensity based on energy, soreness, and time
+- **Readiness adaptation** - Adjusts intensity based on energy, soreness, and time available
 - **Stall detection** - Identifies plateaus and suggests fixes (deloads, rep range changes, variations)
-- **Post-workout insights** - Actionable feedback after each session
+- **Post-workout insights** - AI-generated actionable feedback after each session
+- **Weekly AI review** - Comprehensive analysis with consistency score, highlights, and recommendations
+- **Multiple LLM providers** - Support for Claude, OpenAI, or offline rule-based engine
 
 ### 📊 Progress Tracking
+- **Interactive charts** - Tap and drag to inspect data points on e1RM trend lines
 - **Estimated 1RM tracking** - See strength gains over time using the Epley formula
-- **Volume analytics** - Track weekly sets per muscle group
-- **Workout history** - Review past sessions and performance trends
+- **Volume analytics** - Weekly/daily aggregated volume charts with session stats
+- **Recent PRs** - Personal record tracking with automatic detection
+- **Training calendar** - Monthly view with workout frequency heatmap
+- **Streak tracking** - Current streak, longest streak, and monthly workout count
+- **Muscle group breakdown** - Visual bars showing volume distribution by muscle
+- **Three-tab layout** - Overview, Lifts, and Calendar views
+
+### 🏠 Home Screen
+- **Today's workout preview** - Expandable exercise list with prescription details
+- **Workout swap** - Quick picker to switch to any other template
+- **Quick stats** - Weekly workouts, current streak at a glance
+- **Recent workouts** - Easy access to your workout history
 
 ### 🔧 Equipment Flexibility
 - **Location profiles** - Gym vs home equipment configurations
 - **Smart substitutions** - Automatic exercise swaps based on available gear
-- **Pain flag handling** - Avoid exercises that aggravate injuries
+- **Pain flag handling** - Flag exercises that aggravate injuries and get alternatives
 
 ## Quick Start
 
@@ -101,18 +115,30 @@ StrengthTracker/
 │   ├── Onboarding/        # First-run setup
 │   └── Exercise/          # Exercise details
 ├── Agent/                  # AI coaching system
-│   ├── LLMService.swift   # Provider manager
+│   ├── LLMService.swift   # Provider manager & response types
 │   ├── ClaudeProvider.swift
 │   ├── OpenAIProvider.swift
 │   └── OfflineProgressionEngine.swift
 ├── Services/               # Business logic
 │   ├── ExerciseLibrary.swift
 │   ├── TemplateGenerator.swift
-│   └── SubstitutionGraph.swift
+│   ├── SubstitutionGraph.swift
+│   └── StallDetector.swift # Plateau detection & suggestions
 └── Utilities/              # Helper functions
     ├── E1RMCalculator.swift
     └── PlateMathCalculator.swift
 ```
+
+## Readiness System
+
+The app adapts your workout based on how you feel:
+
+| Input | Condition | Effect |
+|-------|-----------|--------|
+| **Energy** | Low | RPE capped at 7.5, fewer backoff sets |
+| **Soreness** | High | RPE capped at 7.5, reduced volume |
+| **Energy + Soreness** | High + None | RPE cap +0.5, extra backoff set |
+| **Time** | ≤45 min | Optional exercises skipped |
 
 ## Requirements
 
@@ -122,26 +148,27 @@ StrengthTracker/
 
 ## Testing
 
-Run the test suite from Xcode:
+Run the test suite:
 
 ```bash
-# Run all tests
-⌘+U in Xcode
+# Via Swift Package Manager
+cd StrengthTracker
+swift test
 
-# Or via command line
-xcodebuild test -scheme StrengthTracker -destination 'platform=iOS Simulator,name=iPhone 15 Pro'
+# Or in Xcode
+⌘+U
 ```
 
-### Test Coverage
+**141 tests** covering:
 
-| Test File | Coverage |
+| Test Suite | Coverage |
 |-----------|----------|
-| `E1RMCalculatorTests.swift` | e1RM calculations, Epley/Brzycki formulas |
-| `PlateMathCalculatorTests.swift` | Plate loading, warmup generation |
-| `ModelTests.swift` | SwiftData entities, relationships, computed properties |
-| `OfflineProgressionEngineTests.swift` | Progression rules, stall detection, insights |
-| `SubstitutionGraphTests.swift` | Exercise substitutions, equipment filtering |
-| `LLMServiceTests.swift` | Context building, response parsing |
+| `E1RMCalculatorTests` | e1RM calculations, Epley/Brzycki formulas |
+| `PlateMathCalculatorTests` | Plate loading, warmup generation |
+| `ModelTests` | SwiftData entities, relationships, computed properties |
+| `OfflineProgressionEngineTests` | Progression rules, readiness adaptation, insights |
+| `SubstitutionGraphTests` | Exercise substitutions, equipment filtering |
+| `EnumTests` | All enum cases and properties |
 
 ## Optional: LLM API Keys
 

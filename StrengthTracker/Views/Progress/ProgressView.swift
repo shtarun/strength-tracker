@@ -58,7 +58,10 @@ struct ProgressView_Custom: View {
             }
             .navigationTitle("Progress")
             .sheet(isPresented: $showWeeklyReview) {
-                WeeklyReviewSheet(sessions: filteredSessions)
+                WeeklyReviewSheet(
+                    sessions: filteredSessions,
+                    provider: profile?.preferredLLMProvider ?? .offline
+                )
             }
         }
     }
@@ -99,14 +102,25 @@ struct ProgressView_Custom: View {
         }
     }
     
+    // All completed sessions for full history view
+    private var allCompletedSessions: [WorkoutSession] {
+        sessions.filter { $0.isCompleted }
+    }
+    
     // MARK: - Lifts Tab
     private var liftsContent: some View {
         VStack(spacing: 20) {
-            // Main lift trends
+            // Main lift trends (uses filtered time range)
             VStack(alignment: .leading, spacing: 12) {
-                Text("Main Lifts")
-                    .font(.headline)
-                    .padding(.horizontal)
+                HStack {
+                    Text("Main Lifts")
+                        .font(.headline)
+                    Spacer()
+                    Text("(\(selectedTimeRange.rawValue))")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.horizontal)
 
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {
@@ -124,18 +138,18 @@ struct ProgressView_Custom: View {
                 }
             }
 
-            // Detailed exercise chart
+            // Detailed exercise chart (uses ALL sessions for full history)
             if let exercise = selectedExercise {
                 DetailedExerciseChart(
                     exercise: exercise,
-                    sessions: filteredSessions,
+                    sessions: allCompletedSessions,  // Full history!
                     unitSystem: unitSystem
                 )
                 
-                // Exercise stats
+                // Exercise stats (also full history)
                 ExerciseStatsCard(
                     exercise: exercise,
-                    sessions: filteredSessions,
+                    sessions: allCompletedSessions,
                     unitSystem: unitSystem
                 )
             } else {
@@ -537,40 +551,119 @@ struct VolumeChartCard: View {
     let sessions: [WorkoutSession]
     let timeRange: TimeRange
 
-    private var volumeByDate: [(date: Date, volume: Double)] {
+    private var volumeData: [(date: Date, volume: Double, label: String)] {
         let calendar = Calendar.current
-
-        let grouped = Dictionary(grouping: sessions) { session in
-            calendar.startOfDay(for: session.date)
+        
+        // Group by week for longer time ranges, by day for week view
+        if timeRange == .week {
+            // Daily view for week
+            let grouped = Dictionary(grouping: sessions) { session in
+                calendar.startOfDay(for: session.date)
+            }
+            return grouped.map { date, daySessions in
+                let volume = daySessions.reduce(0) { $0 + $1.totalVolume }
+                let label = date.formatted(.dateTime.weekday(.abbreviated))
+                return (date, volume, label)
+            }.sorted { $0.date < $1.date }
+        } else {
+            // Weekly aggregation for longer periods
+            let grouped = Dictionary(grouping: sessions) { session in
+                let components = calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: session.date)
+                return calendar.date(from: components)!
+            }
+            return grouped.map { weekStart, weekSessions in
+                let volume = weekSessions.reduce(0) { $0 + $1.totalVolume }
+                let label = weekStart.formatted(.dateTime.month(.abbreviated).day())
+                return (weekStart, volume, label)
+            }.sorted { $0.date < $1.date }
         }
-
-        return grouped.map { date, daySessions in
-            (date, daySessions.reduce(0) { $0 + $1.totalVolume })
-        }.sorted { $0.date < $1.date }
+    }
+    
+    private var totalVolume: Double {
+        sessions.reduce(0) { $0 + $1.totalVolume }
+    }
+    
+    private var averagePerSession: Double {
+        sessions.isEmpty ? 0 : totalVolume / Double(sessions.count)
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Training Volume")
-                .font(.headline)
+            HStack {
+                Text("Training Volume")
+                    .font(.headline)
+                Spacer()
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text(formatVolume(totalVolume))
+                        .font(.subheadline.bold())
+                    Text("total")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
 
-            if volumeByDate.isEmpty {
-                Text("No data for this period")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .frame(height: 150)
+            if volumeData.isEmpty {
+                VStack(spacing: 8) {
+                    Image(systemName: "chart.bar")
+                        .font(.largeTitle)
+                        .foregroundStyle(.secondary)
+                    Text("No workouts in this period")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
+                .frame(height: 150)
             } else {
-                Chart(volumeByDate, id: \.date) { item in
+                Chart(volumeData, id: \.date) { item in
                     BarMark(
-                        x: .value("Date", item.date, unit: .day),
+                        x: .value("Date", item.date, unit: timeRange == .week ? .day : .weekOfYear),
                         y: .value("Volume", item.volume)
                     )
                     .foregroundStyle(Color.blue.gradient)
+                    .annotation(position: .top, alignment: .center) {
+                        if item.volume > 0 {
+                            Text(formatVolume(item.volume))
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
                 }
-                .frame(height: 150)
+                .frame(height: 180)
                 .chartXAxis {
-                    AxisMarks(values: .automatic(desiredCount: 5))
+                    AxisMarks(values: .automatic(desiredCount: min(volumeData.count, 7))) { value in
+                        AxisGridLine()
+                        AxisValueLabel(format: timeRange == .week ? .dateTime.weekday(.abbreviated) : .dateTime.month(.abbreviated).day())
+                    }
+                }
+                .chartYAxis {
+                    AxisMarks(position: .leading) { value in
+                        AxisGridLine()
+                        AxisValueLabel {
+                            if let v = value.as(Double.self) {
+                                Text(formatVolume(v))
+                                    .font(.caption2)
+                            }
+                        }
+                    }
+                }
+                
+                // Summary stats
+                HStack(spacing: 16) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Sessions")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text("\(sessions.count)")
+                            .font(.subheadline.bold())
+                    }
+                    Divider().frame(height: 30)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Avg/Session")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text(formatVolume(averagePerSession))
+                            .font(.subheadline.bold())
+                    }
                 }
             }
         }
@@ -578,6 +671,13 @@ struct VolumeChartCard: View {
         .background(Color(.systemGray6))
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .padding(.horizontal)
+    }
+    
+    private func formatVolume(_ volume: Double) -> String {
+        if volume >= 1000 {
+            return String(format: "%.1fk", volume / 1000)
+        }
+        return "\(Int(volume))"
     }
 }
 
@@ -590,22 +690,26 @@ struct LiftTrendCard: View {
 
     private var e1RMHistory: [(date: Date, e1RM: Double)] {
         let calendar = Calendar.current
+        let exerciseName = exercise.name
 
+        // Get all sets for this exercise by NAME (more reliable than ID)
         let relevantSets = sessions.flatMap { session in
             session.sets.filter {
-                $0.exercise?.id == exercise.id &&
+                $0.exercise?.name == exerciseName &&
                 $0.isCompleted &&
-                $0.setType != .warmup
+                $0.setType != .warmup &&
+                $0.weight > 0 &&
+                $0.reps > 0
             }.map { (session.date, $0.e1RM) }
         }
 
-        // Group by day and get max
+        // Group by day and get max e1RM for each day
         let grouped = Dictionary(grouping: relevantSets) { item in
             calendar.startOfDay(for: item.0)
         }
 
         return grouped.compactMap { date, sets in
-            guard let maxE1RM = sets.map({ $0.1 }).max() else { return nil }
+            guard let maxE1RM = sets.map({ $0.1 }).max(), maxE1RM > 0 else { return nil }
             return (date, maxE1RM)
         }.sorted { $0.date < $1.date }
     }
@@ -618,7 +722,12 @@ struct LiftTrendCard: View {
         guard e1RMHistory.count >= 2 else { return nil }
         let first = e1RMHistory.first!.e1RM
         let last = e1RMHistory.last!.e1RM
+        guard first > 0 else { return nil }
         return ((last - first) / first) * 100
+    }
+    
+    private var sessionCount: Int {
+        e1RMHistory.count
     }
 
     var body: some View {
@@ -634,8 +743,8 @@ struct LiftTrendCard: View {
                     Text(unitSystem.formatWeight(e1RM))
                         .font(.title3.bold())
                 } else {
-                    Text("-")
-                        .font(.title3.bold())
+                    Text("No data")
+                        .font(.caption)
                         .foregroundStyle(.secondary)
                 }
 
@@ -646,8 +755,12 @@ struct LiftTrendCard: View {
                     }
                     .font(.caption)
                     .foregroundStyle(trend >= 0 ? .green : .red)
+                } else if sessionCount > 0 {
+                    Text("\(sessionCount) session\(sessionCount == 1 ? "" : "s")")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 } else {
-                    Text("No trend")
+                    Text("No history")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -672,38 +785,67 @@ struct DetailedExerciseChart: View {
     
     @State private var selectedPoint: (date: Date, e1RM: Double)?
 
-    private var e1RMHistory: [(date: Date, e1RM: Double)] {
+    private var e1RMHistory: [(date: Date, e1RM: Double, weight: Double, reps: Int)] {
         let calendar = Calendar.current
+        let exerciseName = exercise.name
 
+        // Get all completed working sets for this exercise by NAME
         let relevantSets = sessions.flatMap { session in
-            session.sets.filter {
-                $0.exercise?.id == exercise.id &&
-                $0.isCompleted &&
-                $0.setType != .warmup
-            }.map { (session.date, $0.e1RM) }
+            session.sets.compactMap { set -> (Date, Double, Double, Int)? in
+                guard set.exercise?.name == exerciseName,
+                      set.isCompleted,
+                      set.setType != .warmup,
+                      set.weight > 0,
+                      set.reps > 0 else { return nil }
+                return (session.date, set.e1RM, set.weight, set.reps)
+            }
         }
 
+        // Group by day and get the best set (max e1RM) for each day
         let grouped = Dictionary(grouping: relevantSets) { item in
             calendar.startOfDay(for: item.0)
         }
 
         return grouped.compactMap { date, sets in
-            guard let maxE1RM = sets.map({ $0.1 }).max() else { return nil }
-            return (date, maxE1RM)
+            guard let best = sets.max(by: { $0.1 < $1.1 }), best.1 > 0 else { return nil }
+            return (date, best.1, best.2, best.3)
         }.sorted { $0.date < $1.date }
+    }
+    
+    private var prSet: (date: Date, e1RM: Double, weight: Double, reps: Int)? {
+        e1RMHistory.max { $0.e1RM < $1.e1RM }
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text(exercise.name)
-                    .font(.headline)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(exercise.name)
+                        .font(.headline)
+                    if let pr = prSet {
+                        HStack(spacing: 4) {
+                            Image(systemName: "trophy.fill")
+                                .foregroundStyle(.yellow)
+                            Text("PR: \(unitSystem.formatWeight(pr.weight)) × \(pr.reps)")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
                 Spacer()
                 if let point = selectedPoint {
-                    VStack(alignment: .trailing) {
-                        Text(unitSystem.formatWeight(point.e1RM))
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text("e1RM: \(unitSystem.formatWeight(point.e1RM))")
                             .font(.subheadline.bold())
                         Text(point.date.formatted(.dateTime.month(.abbreviated).day()))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                } else if let last = e1RMHistory.last {
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text("Current: \(unitSystem.formatWeight(last.e1RM))")
+                            .font(.subheadline.bold())
+                        Text("\(e1RMHistory.count) sessions")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -711,11 +853,20 @@ struct DetailedExerciseChart: View {
             }
             
             if e1RMHistory.isEmpty {
-                Text("No data for \(exercise.name)")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .frame(height: 200)
+                VStack(spacing: 12) {
+                    Image(systemName: "chart.line.uptrend.xyaxis")
+                        .font(.largeTitle)
+                        .foregroundStyle(.secondary)
+                    Text("No workout history for \(exercise.name)")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    Text("Complete a workout with this exercise to see your progress")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
+                .frame(height: 200)
             } else {
                 Chart(e1RMHistory, id: \.date) { item in
                     LineMark(
@@ -756,7 +907,7 @@ struct DetailedExerciseChart: View {
                                             if let closest = e1RMHistory.min(by: {
                                                 abs($0.date.timeIntervalSince(date)) < abs($1.date.timeIntervalSince(date))
                                             }) {
-                                                selectedPoint = closest
+                                                selectedPoint = (closest.date, closest.e1RM)
                                             }
                                         }
                                     }
@@ -764,6 +915,34 @@ struct DetailedExerciseChart: View {
                                         selectedPoint = nil
                                     }
                             )
+                    }
+                }
+                
+                // Session history list
+                if e1RMHistory.count > 1 {
+                    Divider()
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Recent Sessions")
+                            .font(.caption.bold())
+                            .foregroundStyle(.secondary)
+                        
+                        ForEach(e1RMHistory.suffix(5).reversed(), id: \.date) { item in
+                            HStack {
+                                Text(item.date.formatted(.dateTime.month(.abbreviated).day()))
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .frame(width: 50, alignment: .leading)
+                                
+                                Text("\(unitSystem.formatWeight(item.weight)) × \(item.reps)")
+                                    .font(.caption)
+                                
+                                Spacer()
+                                
+                                Text("e1RM: \(unitSystem.formatWeight(item.e1RM))")
+                                    .font(.caption.bold())
+                                    .foregroundStyle(.blue)
+                            }
+                        }
                     }
                 }
             }
@@ -782,12 +961,16 @@ struct ExerciseStatsCard: View {
     let sessions: [WorkoutSession]
     let unitSystem: UnitSystem
     
+    private var exerciseName: String { exercise.name }
+    
     private var relevantSets: [WorkoutSet] {
         sessions.flatMap { session in
             session.sets.filter {
-                $0.exercise?.id == exercise.id &&
+                $0.exercise?.name == exerciseName &&
                 $0.isCompleted &&
-                $0.setType != .warmup
+                $0.setType != .warmup &&
+                $0.weight > 0 &&
+                $0.reps > 0
             }
         }
     }
@@ -808,7 +991,7 @@ struct ExerciseStatsCard: View {
     
     private var sessionsCount: Int {
         sessions.filter { session in
-            session.sets.contains { $0.exercise?.id == exercise.id && $0.isCompleted }
+            session.sets.contains { $0.exercise?.name == exerciseName && $0.isCompleted }
         }.count
     }
     
@@ -821,7 +1004,7 @@ struct ExerciseStatsCard: View {
             HStack(spacing: 16) {
                 StatPill(
                     title: "Best e1RM",
-                    value: unitSystem.formatWeight(bestE1RM),
+                    value: bestE1RM > 0 ? unitSystem.formatWeight(bestE1RM) : "-",
                     color: .yellow
                 )
                 
@@ -1133,9 +1316,11 @@ struct WeeklyReviewSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     let sessions: [WorkoutSession]
+    let provider: LLMProviderType
 
-    @State private var review: String?
+    @State private var review: WeeklyReviewResponse?
     @State private var isLoading = true
+    @State private var errorMessage: String?
 
     var body: some View {
         NavigationStack {
@@ -1146,19 +1331,96 @@ struct WeeklyReviewSheet: View {
                             .padding(.top, 50)
                     } else if let review = review {
                         VStack(alignment: .leading, spacing: 16) {
-                            Label("Weekly Review", systemImage: "brain.head.profile")
-                                .font(.headline)
+                            // Consistency Score
+                            HStack {
+                                Label("Consistency Score", systemImage: "chart.bar.fill")
+                                    .font(.headline)
+                                Spacer()
+                                Text("\(review.consistencyScore)/10")
+                                    .font(.title2.bold())
+                                    .foregroundStyle(scoreColor(review.consistencyScore))
+                            }
+                            .padding()
+                            .background(Color(.systemGray6))
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
 
-                            Text(review)
-                                .font(.body)
+                            // Summary
+                            VStack(alignment: .leading, spacing: 8) {
+                                Label("Summary", systemImage: "brain.head.profile")
+                                    .font(.headline)
+
+                                Text(review.summary)
+                                    .font(.body)
+                            }
+                            .padding()
+                            .background(Color(.systemGray6))
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                            // Highlights
+                            if !review.highlights.isEmpty {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Label("Highlights", systemImage: "star.fill")
+                                        .font(.headline)
+                                        .foregroundStyle(.yellow)
+
+                                    ForEach(review.highlights, id: \.self) { highlight in
+                                        HStack(alignment: .top, spacing: 8) {
+                                            Image(systemName: "checkmark.circle.fill")
+                                                .foregroundStyle(.green)
+                                            Text(highlight)
+                                                .font(.subheadline)
+                                        }
+                                    }
+                                }
+                                .padding()
+                                .background(Color.green.opacity(0.1))
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                            }
+
+                            // Areas to Improve
+                            if !review.areasToImprove.isEmpty {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Label("Focus Areas", systemImage: "target")
+                                        .font(.headline)
+                                        .foregroundStyle(.orange)
+
+                                    ForEach(review.areasToImprove, id: \.self) { area in
+                                        HStack(alignment: .top, spacing: 8) {
+                                            Image(systemName: "arrow.right.circle")
+                                                .foregroundStyle(.orange)
+                                            Text(area)
+                                                .font(.subheadline)
+                                        }
+                                    }
+                                }
+                                .padding()
+                                .background(Color.orange.opacity(0.1))
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                            }
+
+                            // Recommendation
+                            VStack(alignment: .leading, spacing: 8) {
+                                Label("Next Week", systemImage: "arrow.forward.circle.fill")
+                                    .font(.headline)
+                                    .foregroundStyle(.blue)
+
+                                Text(review.recommendation)
+                                    .font(.body)
+                            }
+                            .padding()
+                            .background(Color.blue.opacity(0.1))
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
                         }
-                        .padding()
-                        .background(Color(.systemGray6))
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
                         .padding(.horizontal)
-                    } else {
-                        Text("Unable to generate review")
-                            .foregroundStyle(.secondary)
+                    } else if let error = errorMessage {
+                        VStack(spacing: 12) {
+                            Image(systemName: "exclamationmark.triangle")
+                                .font(.largeTitle)
+                                .foregroundStyle(.orange)
+                            Text(error)
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.top, 50)
                     }
                 }
                 .padding(.vertical)
@@ -1176,35 +1438,84 @@ struct WeeklyReviewSheet: View {
         }
     }
 
+    private func scoreColor(_ score: Int) -> Color {
+        switch score {
+        case 8...10: return .green
+        case 5...7: return .yellow
+        default: return .orange
+        }
+    }
+
     private func generateReview() {
         Task {
-            // Simple offline review for now
-            await MainActor.run {
-                let workoutCount = sessions.count
-                let totalVolume = sessions.reduce(0) { $0 + $1.totalVolume }
+            // Build context from sessions
+            let context = buildContext()
 
-                var reviewText = "You completed \(workoutCount) workouts this period. "
-
-                if workoutCount >= 4 {
-                    reviewText += "Great consistency! "
-                } else if workoutCount >= 2 {
-                    reviewText += "Solid effort. Try to add one more session next week. "
-                } else {
-                    reviewText += "Consider increasing training frequency for better results. "
+            do {
+                let result = try await LLMService.shared.generateWeeklyReview(
+                    context: context,
+                    provider: provider
+                )
+                await MainActor.run {
+                    self.review = result
+                    self.isLoading = false
                 }
-
-                if totalVolume > 10000 {
-                    reviewText += "Your training volume is high. Monitor recovery and consider a deload if fatigue builds up."
-                } else if totalVolume > 5000 {
-                    reviewText += "Good training volume. Keep progressing gradually."
-                } else {
-                    reviewText += "Training volume is moderate. You may have room to add sets if recovery allows."
+            } catch {
+                await MainActor.run {
+                    self.errorMessage = "Unable to generate review: \(error.localizedDescription)"
+                    self.isLoading = false
                 }
-
-                self.review = reviewText
-                self.isLoading = false
             }
         }
+    }
+
+    private func buildContext() -> WeeklyReviewContext {
+        let workoutCount = sessions.count
+        let totalVolume = sessions.reduce(0) { $0 + $1.totalVolume }
+        let averageDuration = sessions.isEmpty ? 0 : sessions.reduce(0) { $0 + ($1.actualDuration ?? 0) } / sessions.count
+
+        // Build exercise highlights - group sets by exercise
+        var exerciseData: [String: (sessions: Int, bestE1RM: Double, volume: Double)] = [:]
+
+        for session in sessions {
+            // Group sets by exercise
+            var sessionExercises: [String: [WorkoutSet]] = [:]
+            for set in session.sets where set.isCompleted {
+                guard let exercise = set.exercise else { continue }
+                sessionExercises[exercise.name, default: []].append(set)
+            }
+
+            // Process each exercise in this session
+            for (exerciseName, sets) in sessionExercises {
+                let currentData = exerciseData[exerciseName] ?? (sessions: 0, bestE1RM: 0, volume: 0)
+                let sessionE1RM = sets.map { E1RMCalculator.calculate(weight: $0.weight, reps: $0.reps) }.max() ?? 0
+                let sessionVolume = sets.reduce(0.0) { $0 + ($1.weight * Double($1.reps)) }
+
+                exerciseData[exerciseName] = (
+                    sessions: currentData.sessions + 1,
+                    bestE1RM: max(currentData.bestE1RM, sessionE1RM),
+                    volume: currentData.volume + sessionVolume
+                )
+            }
+        }
+
+        let highlights = exerciseData.map { name, data in
+            WeeklyExerciseHighlight(
+                exerciseName: name,
+                sessions: data.sessions,
+                bestE1RM: data.bestE1RM,
+                previousBestE1RM: nil, // Would need historical data
+                totalVolume: data.volume
+            )
+        }
+
+        return WeeklyReviewContext(
+            workoutCount: workoutCount,
+            totalVolume: totalVolume,
+            averageDuration: averageDuration,
+            exerciseHighlights: highlights,
+            userGoal: "strength" // Could be fetched from UserProfile
+        )
     }
 }
 

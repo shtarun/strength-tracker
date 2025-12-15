@@ -46,6 +46,18 @@ class ClaudeProvider: LLMProvider {
         return try parseResponse(response)
     }
 
+    func generateWeeklyReview(context: WeeklyReviewContext) async throws -> WeeklyReviewResponse {
+        let userMessage = """
+        Weekly Training Data:
+        \(try jsonString(from: context))
+
+        \(CoachPrompts.weeklyReviewPrompt)
+        """
+
+        let response = try await sendMessage(userMessage)
+        return try parseResponse(response)
+    }
+
     private func sendMessage(_ userMessage: String) async throws -> String {
         guard let url = URL(string: baseURL) else {
             throw LLMError.invalidURL
