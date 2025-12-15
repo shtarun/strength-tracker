@@ -19,6 +19,7 @@ An AI-powered iOS strength training app for intermediate lifters. Log workouts f
 ### 🤖 AI-Powered Coaching
 - **Intelligent progression** - Calculates optimal weight/rep targets for each session
 - **Readiness adaptation** - Adjusts intensity based on energy, soreness, and time available
+- **Custom workout generation** - Create workouts from natural language (e.g., "Upper push for 30 min")
 - **Stall detection** - Identifies plateaus and suggests fixes (deloads, rep range changes, variations)
 - **Post-workout insights** - AI-generated actionable feedback after each session
 - **Weekly AI review** - Comprehensive analysis with consistency score, highlights, and recommendations
@@ -37,6 +38,7 @@ An AI-powered iOS strength training app for intermediate lifters. Log workouts f
 ### 🏠 Home Screen
 - **Today's workout preview** - Expandable exercise list with prescription details
 - **Workout swap** - Quick picker to switch to any other template
+- **Custom workout** - AI-powered workout creation from natural language prompts
 - **Quick stats** - Weekly workouts, current streak at a glance
 - **Recent workouts** - Easy access to your workout history
 
