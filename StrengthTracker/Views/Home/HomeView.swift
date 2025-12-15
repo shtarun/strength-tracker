@@ -238,6 +238,8 @@ struct TodayWorkoutCard: View {
     let template: WorkoutTemplate
     let isLoading: Bool
     let onStart: () -> Void
+    
+    @State private var isExpanded = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -260,26 +262,37 @@ struct TodayWorkoutCard: View {
                     .clipShape(Capsule())
             }
 
-            // Exercise preview
+            // Exercise list - expandable
             VStack(alignment: .leading, spacing: 8) {
-                ForEach(template.sortedExercises.prefix(4)) { templateEx in
+                let exercisesToShow = isExpanded ? template.sortedExercises : Array(template.sortedExercises.prefix(4))
+                
+                ForEach(exercisesToShow) { templateEx in
                     if let exercise = templateEx.exercise {
-                        HStack(spacing: 8) {
-                            Circle()
-                                .fill(templateEx.isOptional ? Color.gray : Color.blue)
-                                .frame(width: 6, height: 6)
-                            Text(exercise.name)
-                                .font(.subheadline)
-                                .foregroundStyle(templateEx.isOptional ? .secondary : .primary)
-                            Spacer()
-                        }
+                        ExercisePreviewRow(
+                            exercise: exercise,
+                            templateExercise: templateEx,
+                            isExpanded: isExpanded
+                        )
                     }
                 }
 
+                // Expand/Collapse button
                 if template.exercises.count > 4 {
-                    Text("+\(template.exercises.count - 4) more")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            isExpanded.toggle()
+                        }
+                    } label: {
+                        HStack {
+                            Text(isExpanded ? "Show less" : "Show all \(template.exercises.count) exercises")
+                                .font(.subheadline)
+                            Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                                .font(.caption)
+                        }
+                        .foregroundStyle(.blue)
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, 4)
+                    }
                 }
             }
 
@@ -305,6 +318,70 @@ struct TodayWorkoutCard: View {
         .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .shadow(color: .black.opacity(0.1), radius: 8, y: 4)
+    }
+}
+
+struct ExercisePreviewRow: View {
+    let exercise: Exercise
+    let templateExercise: ExerciseTemplate
+    let isExpanded: Bool
+    
+    private var prescription: Prescription {
+        templateExercise.prescription
+    }
+    
+    private var prescriptionSummary: String {
+        if prescription.progressionType == .topSetBackoff {
+            let topSet = "1×\(prescription.topSetRepsRange) @RPE\(Int(prescription.topSetRPECap))"
+            let backoffs = prescription.backoffSets > 0 ? " + \(prescription.backoffSets)×\(prescription.backoffRepsRange)" : ""
+            return topSet + backoffs
+        } else {
+            return "\(prescription.workingSets)×\(prescription.topSetRepsRange) @RPE\(Int(prescription.topSetRPECap))"
+        }
+    }
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 8) {
+                Circle()
+                    .fill(templateExercise.isOptional ? Color.gray : Color.blue)
+                    .frame(width: 6, height: 6)
+                
+                Text(exercise.name)
+                    .font(.subheadline)
+                    .foregroundStyle(templateExercise.isOptional ? .secondary : .primary)
+                
+                if templateExercise.isOptional {
+                    Text("optional")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color(.systemGray5))
+                        .clipShape(Capsule())
+                }
+                
+                Spacer()
+            }
+            
+            // Show prescription details when expanded
+            if isExpanded {
+                HStack(spacing: 12) {
+                    Label(prescriptionSummary, systemImage: "number")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    
+                    if exercise.isCompound {
+                        Label("Compound", systemImage: "figure.strengthtraining.traditional")
+                            .font(.caption)
+                            .foregroundStyle(.blue)
+                    }
+                }
+                .padding(.leading, 14)
+                .padding(.top, 2)
+            }
+        }
+        .padding(.vertical, isExpanded ? 4 : 0)
     }
 }
 
