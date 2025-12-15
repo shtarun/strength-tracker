@@ -14,6 +14,7 @@ struct WorkoutView: View {
     @State private var showRestTimer = false
     @State private var restTimeRemaining: Int = 180
     @State private var showSummary = false
+    @State private var showPainFlagSheet = false
     @State private var session: WorkoutSession?
 
     @State private var exerciseSets: [UUID: [WorkoutSet]] = [:]
@@ -56,7 +57,10 @@ struct WorkoutView: View {
                             ExerciseHeader(
                                 exercise: exercise,
                                 templateExercise: templateExercise,
-                                planData: plan?.exercises.first { $0.exerciseName == exercise.name }
+                                planData: plan?.exercises.first { $0.exerciseName == exercise.name },
+                                onPainFlagTapped: {
+                                    showPainFlagSheet = true
+                                }
                             )
 
                             // Sets list
@@ -125,9 +129,15 @@ struct WorkoutView: View {
                     }
                 )
             }
-        }
-        .onAppear {
-            initializeWorkout()
+            .sheet(isPresented: $showPainFlagSheet) {
+                if let exercise = currentExercise {
+                    PainFlagSheet(exercise: exercise)
+                        .presentationDetents([.medium])
+                }
+            }
+            .onAppear {
+                initializeWorkout()
+            }
         }
     }
 
@@ -379,11 +389,27 @@ struct ExerciseHeader: View {
     let exercise: Exercise
     let templateExercise: ExerciseTemplate
     let planData: PlannedExerciseResponse?
+    var onPainFlagTapped: (() -> Void)?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(exercise.name)
-                .font(.title2.bold())
+            HStack {
+                Text(exercise.name)
+                    .font(.title2.bold())
+                
+                Spacer()
+                
+                // Pain flag button
+                Button {
+                    onPainFlagTapped?()
+                } label: {
+                    Image(systemName: "exclamationmark.triangle")
+                        .font(.title3)
+                        .foregroundStyle(.orange)
+                }
+                .buttonStyle(.bordered)
+                .buttonBorderShape(.circle)
+            }
 
             HStack {
                 Label(exercise.movementPattern.rawValue, systemImage: "figure.strengthtraining.traditional")
