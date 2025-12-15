@@ -8,6 +8,7 @@ protocol LLMProvider {
     func generateInsight(session: SessionSummary) async throws -> InsightResponse
     func analyzeStall(context: StallContext) async throws -> StallAnalysisResponse
     func generateWeeklyReview(context: WeeklyReviewContext) async throws -> WeeklyReviewResponse
+    func generateCustomWorkout(request: CustomWorkoutRequest) async throws -> CustomWorkoutResponse
 }
 
 // MARK: - Request/Response Types
@@ -168,6 +169,43 @@ struct WeeklyExerciseHighlight: Codable {
     let totalVolume: Double
 }
 
+// MARK: - Custom Workout Types
+
+struct CustomWorkoutRequest: Codable {
+    let userPrompt: String
+    let availableExercises: [AvailableExerciseInfo]
+    let equipmentAvailable: [String]
+    let userGoal: String
+    let location: String
+    let timeAvailable: Int
+    let recentExerciseHistory: [String: Double] // exerciseName: lastE1RM
+}
+
+struct AvailableExerciseInfo: Codable {
+    let name: String
+    let movementPattern: String
+    let primaryMuscles: [String]
+    let isCompound: Bool
+    let equipmentRequired: [String]
+}
+
+struct CustomWorkoutResponse: Codable {
+    let workoutName: String
+    let exercises: [CustomExercisePlan]
+    let reasoning: String
+    let estimatedDuration: Int
+    let focusAreas: [String]
+}
+
+struct CustomExercisePlan: Codable {
+    let exerciseName: String
+    let sets: Int
+    let reps: String // e.g., "8-10" or "5"
+    let rpeCap: Double
+    let notes: String?
+    let suggestedWeight: Double? // Based on history if available
+}
+
 // MARK: - LLM Service Manager
 
 @MainActor
@@ -273,6 +311,26 @@ class LLMService: ObservableObject {
         }
 
         return await offlineEngine.generateWeeklyReview(context: context)
+    }
+
+    func generateCustomWorkout(
+        request: CustomWorkoutRequest,
+        provider: LLMProviderType
+    ) async throws -> CustomWorkoutResponse {
+        isLoading = true
+        defer { isLoading = false }
+
+        if provider != .offline, let llmProvider = getProvider(for: provider) {
+            do {
+                return try await llmProvider.generateCustomWorkout(request: request)
+            } catch {
+                lastError = "LLM unavailable: \(error.localizedDescription)"
+                throw error
+            }
+        }
+
+        // Custom workouts require LLM - no offline fallback
+        throw LLMError.noProvider("Custom workouts require an AI provider. Please configure Claude or OpenAI in Settings.")
     }
 }
 
@@ -393,6 +451,38 @@ enum CoachPrompts {
       "areasToImprove": ["string"],
       "recommendation": "string (one actionable item)",
       "consistencyScore": number
+    }
+    """
+
+    static let customWorkoutPrompt = """
+    Create a custom workout based on the user's natural language request.
+
+    Guidelines:
+    1. ONLY use exercises from the provided availableExercises list
+    2. Match exercises to the user's equipment
+    3. Respect the time constraint - estimate ~3-4 min per working set including rest
+    4. Select exercises that fit the user's request (muscle groups, workout type, etc.)
+    5. For compound exercises: 3-5 working sets
+    6. For isolation exercises: 2-3 working sets
+    7. Use the user's exercise history to suggest appropriate weights
+    8. Order exercises: compounds first, then isolations
+
+    Respond with valid JSON:
+    {
+      "workoutName": "string (descriptive name)",
+      "exercises": [
+        {
+          "exerciseName": "string (must match an exercise from availableExercises)",
+          "sets": number,
+          "reps": "string (e.g., '8-10' or '5')",
+          "rpeCap": number (7-9),
+          "notes": "string or null",
+          "suggestedWeight": number or null
+        }
+      ],
+      "reasoning": "string (brief explanation of exercise selection)",
+      "estimatedDuration": number (minutes),
+      "focusAreas": ["string (muscle groups targeted)"]
     }
     """
 }

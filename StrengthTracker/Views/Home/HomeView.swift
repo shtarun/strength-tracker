@@ -10,10 +10,12 @@ struct HomeView: View {
     @State private var showReadinessCheck = false
     @State private var showActiveWorkout = false
     @State private var showWorkoutPicker = false
+    @State private var showCustomWorkout = false
     @State private var selectedTemplate: WorkoutTemplate?
     @State private var todayPlan: TodayPlanResponse?
     @State private var isGeneratingPlan = false
     @State private var manuallySelectedTemplate: WorkoutTemplate?
+    @State private var customWorkoutResponse: CustomWorkoutResponse?
 
     private var profile: UserProfile? { userProfiles.first }
     private var nextTemplate: WorkoutTemplate? {
@@ -63,6 +65,13 @@ struct HomeView: View {
                             description: Text("Go to Templates tab to create your first workout")
                         )
                     }
+                    
+                    // Custom workout button (AI-powered)
+                    if profile?.preferredLLMProvider != .offline {
+                        CustomWorkoutButton {
+                            showCustomWorkout = true
+                        }
+                    }
 
                     // Quick stats
                     StatsCard(sessions: recentSessions)
@@ -103,6 +112,16 @@ struct HomeView: View {
                     }
                 )
                 .presentationDetents([.medium, .large])
+            }
+            .sheet(isPresented: $showCustomWorkout) {
+                CustomWorkoutSheet(
+                    profile: profile,
+                    onStartWorkout: { response in
+                        customWorkoutResponse = response
+                        startCustomWorkout(response: response)
+                    }
+                )
+                .presentationDetents([.large])
             }
         }
     }
@@ -153,6 +172,29 @@ struct HomeView: View {
                 print("🏋️ Showing workout view (offline path)")
                 showActiveWorkout = true
             }
+        }
+    }
+    
+    private func startCustomWorkout(response: CustomWorkoutResponse) {
+        print("🏋️ Starting custom workout: \(response.workoutName)")
+        print("🏋️ Custom workout has \(response.exercises.count) exercises")
+        
+        // For custom workouts, we won't use the template-based workout view
+        // Instead, we'll create a session and show a summary of what to do
+        // For now, let's just use the first template as a base if available
+        // In the future, we could create an ad-hoc template
+        
+        if let firstTemplate = templates.first {
+            selectedTemplate = firstTemplate
+            todayPlan = nil // No LLM plan - user will follow the custom workout preview
+            
+            // Show workout after a small delay
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                print("🏋️ Showing workout view for custom workout")
+                showActiveWorkout = true
+            }
+        } else {
+            print("⚠️ No templates available to start workout")
         }
     }
 
@@ -355,6 +397,43 @@ struct TodayWorkoutCard: View {
         .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .shadow(color: .black.opacity(0.1), radius: 8, y: 4)
+    }
+}
+
+struct CustomWorkoutButton: View {
+    let onTap: () -> Void
+    
+    var body: some View {
+        Button(action: onTap) {
+            HStack(spacing: 12) {
+                Image(systemName: "sparkles")
+                    .font(.title2)
+                    .foregroundStyle(.purple)
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Create Custom Workout")
+                        .font(.subheadline.bold())
+                        .foregroundStyle(.primary)
+                    
+                    Text("Use AI to build a workout from scratch")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                
+                Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding()
+            .background(Color(.systemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(Color.purple.opacity(0.3), lineWidth: 1)
+            )
+        }
     }
 }
 

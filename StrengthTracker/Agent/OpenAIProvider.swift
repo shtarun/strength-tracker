@@ -58,6 +58,28 @@ class OpenAIProvider: LLMProvider {
         return try parseResponse(response)
     }
 
+    func generateCustomWorkout(request: CustomWorkoutRequest) async throws -> CustomWorkoutResponse {
+        let userMessage = """
+        User Request: "\(request.userPrompt)"
+
+        Time Available: \(request.timeAvailable) minutes
+        Location: \(request.location)
+        User Goal: \(request.userGoal)
+        Equipment Available: \(request.equipmentAvailable.joined(separator: ", "))
+
+        Available Exercises:
+        \(try jsonString(from: request.availableExercises))
+
+        Recent Exercise History (name: lastE1RM):
+        \(request.recentExerciseHistory.map { "\($0.key): \($0.value)kg" }.joined(separator: "\n"))
+
+        \(CoachPrompts.customWorkoutPrompt)
+        """
+
+        let response = try await sendMessage(userMessage)
+        return try parseResponse(response)
+    }
+
     private func sendMessage(_ userMessage: String) async throws -> String {
         guard let url = URL(string: baseURL) else {
             throw LLMError.invalidURL
