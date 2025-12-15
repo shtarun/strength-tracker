@@ -46,6 +46,40 @@ class ClaudeProvider: LLMProvider {
         return try parseResponse(response)
     }
 
+    func generateWeeklyReview(context: WeeklyReviewContext) async throws -> WeeklyReviewResponse {
+        let userMessage = """
+        Weekly Training Data:
+        \(try jsonString(from: context))
+
+        \(CoachPrompts.weeklyReviewPrompt)
+        """
+
+        let response = try await sendMessage(userMessage)
+        return try parseResponse(response)
+    }
+
+    func generateCustomWorkout(request: CustomWorkoutRequest) async throws -> CustomWorkoutResponse {
+        let userMessage = """
+        User Request: "\(request.userPrompt)"
+
+        Time Available: \(request.timeAvailable) minutes
+        Location: \(request.location)
+        User Goal: \(request.userGoal)
+        Equipment Available: \(request.equipmentAvailable.joined(separator: ", "))
+
+        Available Exercises:
+        \(try jsonString(from: request.availableExercises))
+
+        Recent Exercise History (name: lastE1RM):
+        \(request.recentExerciseHistory.map { "\($0.key): \($0.value)kg" }.joined(separator: "\n"))
+
+        \(CoachPrompts.customWorkoutPrompt)
+        """
+
+        let response = try await sendMessage(userMessage)
+        return try parseResponse(response)
+    }
+
     private func sendMessage(_ userMessage: String) async throws -> String {
         guard let url = URL(string: baseURL) else {
             throw LLMError.invalidURL
@@ -161,6 +195,7 @@ enum LLMError: LocalizedError {
     case apiError(statusCode: Int, message: String)
     case noContent
     case parseError(String)
+    case noProvider(String)
 
     var errorDescription: String? {
         switch self {
@@ -174,6 +209,8 @@ enum LLMError: LocalizedError {
             return "No content in response"
         case .parseError(let message):
             return "Parse error: \(message)"
+        case .noProvider(let message):
+            return message
         }
     }
 }

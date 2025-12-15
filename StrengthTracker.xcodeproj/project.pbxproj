@@ -48,6 +48,7 @@
 		039 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 139; };
 		040 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 140; };
 		042 /* StallDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 142; };
+		043 /* CustomWorkoutSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 143; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -93,6 +94,7 @@
 		139 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		140 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		142 /* StallDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StallDetector.swift; sourceTree = "<group>"; };
+		143 /* CustomWorkoutSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomWorkoutSheet.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -236,6 +238,7 @@
 			children = (
 				131 /* HomeView.swift */,
 				132 /* ReadinessCheckSheet.swift */,
+				143 /* CustomWorkoutSheet.swift */,
 			);
 			path = Home;
 			sourceTree = "<group>";
@@ -391,6 +394,7 @@
 				038 /* ProgressView.swift in Sources */,
 				039 /* ProfileView.swift in Sources */,
 				042 /* StallDetector.swift in Sources */,
+				043 /* CustomWorkoutSheet.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

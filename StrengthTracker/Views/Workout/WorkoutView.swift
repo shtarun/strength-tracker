@@ -123,6 +123,7 @@ struct WorkoutView: View {
                     template: template,
                     exerciseSets: exerciseSets,
                     startTime: workoutStartTime,
+                    provider: profile?.preferredLLMProvider ?? .offline,
                     onSave: saveWorkout,
                     onDiscard: {
                         dismiss()

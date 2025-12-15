@@ -320,4 +320,104 @@ actor OfflineProgressionEngine {
     private func roundToNearest(_ value: Double, increment: Double) -> Double {
         return (value / increment).rounded() * increment
     }
+
+    // MARK: - Weekly Review
+
+    func generateWeeklyReview(context: WeeklyReviewContext) async -> WeeklyReviewResponse {
+        var highlights: [String] = []
+        var areasToImprove: [String] = []
+
+        // Check for PRs
+        let prs = context.exerciseHighlights.filter { highlight in
+            guard let previous = highlight.previousBestE1RM else { return false }
+            return highlight.bestE1RM > previous
+        }
+
+        if !prs.isEmpty {
+            let prNames = prs.prefix(3).map { $0.exerciseName }
+            highlights.append("Hit PRs on \(prNames.joined(separator: ", "))")
+        }
+
+        // Consistency scoring
+        let consistencyScore: Int
+        let consistencyMessage: String
+
+        switch context.workoutCount {
+        case 0:
+            consistencyScore = 1
+            consistencyMessage = "No workouts recorded this period."
+        case 1:
+            consistencyScore = 3
+            consistencyMessage = "You completed 1 workout."
+        case 2:
+            consistencyScore = 5
+            consistencyMessage = "You completed 2 workouts."
+        case 3:
+            consistencyScore = 7
+            consistencyMessage = "You completed 3 workouts. Good consistency!"
+        case 4:
+            consistencyScore = 8
+            consistencyMessage = "You completed 4 workouts. Excellent consistency!"
+        default:
+            consistencyScore = 9
+            consistencyMessage = "You completed \(context.workoutCount) workouts. Outstanding commitment!"
+        }
+
+        if context.workoutCount >= 4 {
+            highlights.append("Maintained excellent training frequency")
+        }
+
+        // Volume analysis
+        if context.totalVolume > 15000 {
+            highlights.append("High training volume (\(Int(context.totalVolume / 1000))k kg)")
+        } else if context.totalVolume > 8000 {
+            highlights.append("Solid training volume this week")
+        }
+
+        // Areas to improve
+        if context.workoutCount < 3 {
+            areasToImprove.append("Try to fit in at least 3 sessions per week for optimal progress")
+        }
+
+        if prs.isEmpty && context.workoutCount >= 2 {
+            areasToImprove.append("Focus on progressive overload - aim for small weight or rep increases")
+        }
+
+        if context.averageDuration < 40 && context.workoutCount > 0 {
+            areasToImprove.append("Consider longer sessions to include more accessory work")
+        }
+
+        // Build summary
+        var summary = consistencyMessage
+
+        if !prs.isEmpty {
+            summary += " You set \(prs.count) personal record(s)."
+        }
+
+        if context.totalVolume > 10000 {
+            summary += " Your volume is on track."
+        } else if context.workoutCount > 0 {
+            summary += " There's room to increase volume if recovery allows."
+        }
+
+        // Recommendation
+        let recommendation: String
+        if context.workoutCount < 2 {
+            recommendation = "Prioritize getting to the gym at least 3 times this week."
+        } else if prs.isEmpty {
+            recommendation = "Focus on adding 1 rep or 2.5kg to your main lifts this week."
+        } else if context.totalVolume > 15000 {
+            recommendation = "Monitor fatigue levels and consider a lighter week if needed."
+        } else {
+            recommendation = "Keep up the momentum! Stay consistent and trust the process."
+        }
+
+        return WeeklyReviewResponse(
+            summary: summary,
+            highlights: highlights.isEmpty ? ["Showed up and put in the work"] : highlights,
+            areasToImprove: areasToImprove.isEmpty ? ["Keep pushing - you're on track"] : areasToImprove,
+            recommendation: recommendation,
+            consistencyScore: consistencyScore
+        )
+    }
 }

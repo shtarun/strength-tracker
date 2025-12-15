@@ -9,12 +9,22 @@ struct HomeView: View {
 
     @State private var showReadinessCheck = false
     @State private var showActiveWorkout = false
+    @State private var showWorkoutPicker = false
+    @State private var showCustomWorkout = false
     @State private var selectedTemplate: WorkoutTemplate?
     @State private var todayPlan: TodayPlanResponse?
     @State private var isGeneratingPlan = false
+    @State private var manuallySelectedTemplate: WorkoutTemplate?
+    @State private var customWorkoutResponse: CustomWorkoutResponse?
 
     private var profile: UserProfile? { userProfiles.first }
     private var nextTemplate: WorkoutTemplate? {
+        // If user manually selected a template, use that
+        if let manual = manuallySelectedTemplate {
+            return manual
+        }
+        
+        // Otherwise, auto-select based on last workout
         guard let lastSession = recentSessions.first,
               let lastTemplate = lastSession.template,
               let index = templates.firstIndex(where: { $0.id == lastTemplate.id }) else {
@@ -37,10 +47,14 @@ struct HomeView: View {
                     if let template = nextTemplate {
                         TodayWorkoutCard(
                             template: template,
+                            allTemplates: templates,
                             isLoading: isGeneratingPlan,
                             onStart: {
                                 selectedTemplate = template
                                 showReadinessCheck = true
+                            },
+                            onSwap: {
+                                showWorkoutPicker = true
                             }
                         )
                     } else if templates.isEmpty {
@@ -50,6 +64,13 @@ struct HomeView: View {
                             systemImage: "dumbbell.fill",
                             description: Text("Go to Templates tab to create your first workout")
                         )
+                    }
+                    
+                    // Custom workout button (AI-powered)
+                    if profile?.preferredLLMProvider != .offline {
+                        CustomWorkoutButton {
+                            showCustomWorkout = true
+                        }
                     }
 
                     // Quick stats
@@ -80,6 +101,27 @@ struct HomeView: View {
                         plan: todayPlan
                     )
                 }
+            }
+            .sheet(isPresented: $showWorkoutPicker) {
+                WorkoutPickerSheet(
+                    templates: templates,
+                    currentTemplate: nextTemplate,
+                    onSelect: { template in
+                        manuallySelectedTemplate = template
+                        showWorkoutPicker = false
+                    }
+                )
+                .presentationDetents([.medium, .large])
+            }
+            .sheet(isPresented: $showCustomWorkout) {
+                CustomWorkoutSheet(
+                    profile: profile,
+                    onStartWorkout: { response in
+                        customWorkoutResponse = response
+                        startCustomWorkout(response: response)
+                    }
+                )
+                .presentationDetents([.large])
             }
         }
     }
@@ -130,6 +172,29 @@ struct HomeView: View {
                 print("🏋️ Showing workout view (offline path)")
                 showActiveWorkout = true
             }
+        }
+    }
+    
+    private func startCustomWorkout(response: CustomWorkoutResponse) {
+        print("🏋️ Starting custom workout: \(response.workoutName)")
+        print("🏋️ Custom workout has \(response.exercises.count) exercises")
+        
+        // For custom workouts, we won't use the template-based workout view
+        // Instead, we'll create a session and show a summary of what to do
+        // For now, let's just use the first template as a base if available
+        // In the future, we could create an ad-hoc template
+        
+        if let firstTemplate = templates.first {
+            selectedTemplate = firstTemplate
+            todayPlan = nil // No LLM plan - user will follow the custom workout preview
+            
+            // Show workout after a small delay
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                print("🏋️ Showing workout view for custom workout")
+                showActiveWorkout = true
+            }
+        } else {
+            print("⚠️ No templates available to start workout")
         }
     }
 
@@ -236,8 +301,10 @@ struct GreetingCard: View {
 
 struct TodayWorkoutCard: View {
     let template: WorkoutTemplate
+    let allTemplates: [WorkoutTemplate]
     let isLoading: Bool
     let onStart: () -> Void
+    let onSwap: () -> Void
     
     @State private var isExpanded = false
 
@@ -252,6 +319,18 @@ struct TodayWorkoutCard: View {
                         .font(.title2.bold())
                 }
                 Spacer()
+
+                // Swap button (only if more than one template)
+                if allTemplates.count > 1 {
+                    Button(action: onSwap) {
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                            .font(.body)
+                            .foregroundStyle(.blue)
+                            .padding(8)
+                            .background(Color(.systemGray6))
+                            .clipShape(Circle())
+                    }
+                }
 
                 Text("\(template.targetDuration) min")
                     .font(.subheadline)
@@ -318,6 +397,43 @@ struct TodayWorkoutCard: View {
         .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .shadow(color: .black.opacity(0.1), radius: 8, y: 4)
+    }
+}
+
+struct CustomWorkoutButton: View {
+    let onTap: () -> Void
+    
+    var body: some View {
+        Button(action: onTap) {
+            HStack(spacing: 12) {
+                Image(systemName: "sparkles")
+                    .font(.title2)
+                    .foregroundStyle(.purple)
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Create Custom Workout")
+                        .font(.subheadline.bold())
+                        .foregroundStyle(.primary)
+                    
+                    Text("Use AI to build a workout from scratch")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                
+                Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding()
+            .background(Color(.systemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(Color.purple.opacity(0.3), lineWidth: 1)
+            )
+        }
     }
 }
 
@@ -520,6 +636,113 @@ struct RecentWorkoutRow: View {
         .padding()
         .background(Color(.systemGray6))
         .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+}
+
+// MARK: - Workout Picker Sheet
+
+struct WorkoutPickerSheet: View {
+    let templates: [WorkoutTemplate]
+    let currentTemplate: WorkoutTemplate?
+    let onSelect: (WorkoutTemplate) -> Void
+    
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    ForEach(templates) { template in
+                        WorkoutPickerRow(
+                            template: template,
+                            isSelected: template.id == currentTemplate?.id,
+                            onSelect: {
+                                onSelect(template)
+                            }
+                        )
+                    }
+                } header: {
+                    Text("Choose a workout")
+                } footer: {
+                    Text("Tap to select a different workout for today")
+                        .font(.caption)
+                }
+            }
+            .navigationTitle("Swap Workout")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+}
+
+struct WorkoutPickerRow: View {
+    let template: WorkoutTemplate
+    let isSelected: Bool
+    let onSelect: () -> Void
+    
+    var body: some View {
+        Button(action: onSelect) {
+            HStack {
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Text(template.name)
+                            .font(.headline)
+                            .foregroundStyle(.primary)
+                        
+                        if isSelected {
+                            Text("Current")
+                                .font(.caption2)
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Color.blue)
+                                .clipShape(Capsule())
+                        }
+                    }
+                    
+                    HStack(spacing: 12) {
+                        Label("\(template.exercises.count) exercises", systemImage: "dumbbell")
+                        Label("\(template.targetDuration) min", systemImage: "clock")
+                    }
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    
+                    // Show first few exercises
+                    if !template.sortedExercises.isEmpty {
+                        let exerciseNames = template.sortedExercises.prefix(3)
+                            .compactMap { $0.exercise?.name }
+                            .joined(separator: ", ")
+                        let remaining = template.exercises.count - 3
+                        let suffix = remaining > 0 ? " +\(remaining) more" : ""
+                        
+                        Text(exerciseNames + suffix)
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                            .lineLimit(1)
+                    }
+                }
+                
+                Spacer()
+                
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(.blue)
+                        .font(.title2)
+                } else {
+                    Image(systemName: "circle")
+                        .foregroundStyle(.secondary)
+                        .font(.title2)
+                }
+            }
+            .padding(.vertical, 4)
+        }
+        .buttonStyle(.plain)
     }
 }
 
