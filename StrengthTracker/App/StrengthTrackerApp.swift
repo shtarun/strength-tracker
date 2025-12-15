@@ -18,32 +18,41 @@ struct StrengthTrackerApp: App {
                 PainFlag.self
             ])
             
-            // Try to create container, if it fails due to schema mismatch, delete and recreate
             let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
             
             do {
                 modelContainer = try ModelContainer(for: schema, configurations: [modelConfiguration])
             } catch {
                 // Schema migration failed - delete existing store and try again
-                print("Schema migration failed: \(error). Recreating database...")
+                print("⚠️ Schema migration failed: \(error). Recreating database...")
                 
-                // Get the default store URL
-                let url = URL.applicationSupportDirectory.appending(path: "default.store")
-                
-                // Delete existing files
+                // Delete ALL SwiftData stores in Application Support
                 let fileManager = FileManager.default
-                let storePaths = [
-                    url.path,
-                    url.path + "-shm",
-                    url.path + "-wal"
+                let appSupportURL = URL.applicationSupportDirectory
+                
+                if let contents = try? fileManager.contentsOfDirectory(at: appSupportURL, includingPropertiesForKeys: nil) {
+                    for url in contents {
+                        if url.lastPathComponent.contains("store") || url.lastPathComponent.contains("Store") {
+                            try? fileManager.removeItem(at: url)
+                            print("🗑️ Deleted: \(url.lastPathComponent)")
+                        }
+                    }
+                }
+                
+                // Also try the specific default.store paths
+                let defaultStorePaths = [
+                    appSupportURL.appending(path: "default.store"),
+                    appSupportURL.appending(path: "default.store-shm"),
+                    appSupportURL.appending(path: "default.store-wal")
                 ]
                 
-                for path in storePaths {
-                    try? fileManager.removeItem(atPath: path)
+                for url in defaultStorePaths {
+                    try? fileManager.removeItem(at: url)
                 }
                 
                 // Try again with fresh store
                 modelContainer = try ModelContainer(for: schema, configurations: [modelConfiguration])
+                print("✅ Successfully recreated database")
             }
         } catch {
             fatalError("Could not create ModelContainer: \(error)")

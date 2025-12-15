@@ -49,6 +49,7 @@
 		040 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 140; };
 		042 /* StallDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 142; };
 		043 /* CustomWorkoutSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 143; };
+		044 /* AppearanceMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 144; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -66,6 +67,7 @@
 		111 /* Readiness.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Readiness.swift; sourceTree = "<group>"; };
 		112 /* UnitSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnitSystem.swift; sourceTree = "<group>"; };
 		113 /* LLMProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMProvider.swift; sourceTree = "<group>"; };
+		144 /* AppearanceMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearanceMode.swift; sourceTree = "<group>"; };
 		114 /* UserProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfile.swift; sourceTree = "<group>"; };
 		115 /* EquipmentProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EquipmentProfile.swift; sourceTree = "<group>"; };
 		116 /* Exercise.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Exercise.swift; sourceTree = "<group>"; };
@@ -221,6 +223,7 @@
 				111 /* Readiness.swift */,
 				112 /* UnitSystem.swift */,
 				113 /* LLMProvider.swift */,
+				144 /* AppearanceMode.swift */,
 			);
 			path = Enums;
 			sourceTree = "<group>";
@@ -395,6 +398,7 @@
 				039 /* ProfileView.swift in Sources */,
 				042 /* StallDetector.swift in Sources */,
 				043 /* CustomWorkoutSheet.swift in Sources */,
+				044 /* AppearanceMode.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

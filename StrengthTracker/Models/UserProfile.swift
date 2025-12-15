@@ -14,6 +14,7 @@ final class UserProfile {
     var preferredLLMProvider: LLMProviderType
     var claudeAPIKey: String?
     var openAIAPIKey: String?
+    var appearanceMode: AppearanceMode = AppearanceMode.auto
     var createdAt: Date
     var updatedAt: Date
 
@@ -31,6 +32,7 @@ final class UserProfile {
         preferredLLMProvider: LLMProviderType = .offline,
         claudeAPIKey: String? = nil,
         openAIAPIKey: String? = nil,
+        appearanceMode: AppearanceMode = .auto,
         createdAt: Date = Date(),
         updatedAt: Date = Date()
     ) {
@@ -45,6 +47,7 @@ final class UserProfile {
         self.preferredLLMProvider = preferredLLMProvider
         self.claudeAPIKey = claudeAPIKey
         self.openAIAPIKey = openAIAPIKey
+        self.appearanceMode = appearanceMode
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
