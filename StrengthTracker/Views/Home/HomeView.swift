@@ -11,7 +11,8 @@ struct HomeView: View {
     @State private var showActiveWorkout = false
     @State private var showWorkoutPicker = false
     @State private var showCustomWorkout = false
-    @State private var selectedTemplate: WorkoutTemplate?
+    @State private var templateForReadiness: WorkoutTemplate?
+    @State private var templateForWorkout: WorkoutTemplate?
     @State private var todayPlan: TodayPlanResponse?
     @State private var isGeneratingPlan = false
     @State private var manuallySelectedTemplate: WorkoutTemplate?
@@ -50,8 +51,7 @@ struct HomeView: View {
                             allTemplates: templates,
                             isLoading: isGeneratingPlan,
                             onStart: {
-                                selectedTemplate = template
-                                showReadinessCheck = true
+                                templateForReadiness = template
                             },
                             onSwap: {
                                 showWorkoutPicker = true
@@ -84,23 +84,19 @@ struct HomeView: View {
                 .padding()
             }
             .navigationTitle("Home")
-            .sheet(isPresented: $showReadinessCheck) {
-                if let template = selectedTemplate {
-                    ReadinessCheckSheet(
-                        template: template,
-                        onStart: { readiness in
-                            startWorkout(template: template, readiness: readiness)
-                        }
-                    )
-                }
+            .sheet(item: $templateForReadiness) { template in
+                ReadinessCheckSheet(
+                    template: template,
+                    onStart: { readiness in
+                        startWorkout(template: template, readiness: readiness)
+                    }
+                )
             }
-            .fullScreenCover(isPresented: $showActiveWorkout) {
-                if let template = selectedTemplate {
-                    WorkoutView(
-                        template: template,
-                        plan: todayPlan
-                    )
-                }
+            .fullScreenCover(item: $templateForWorkout) { template in
+                WorkoutView(
+                    template: template,
+                    plan: todayPlan
+                )
             }
             .sheet(isPresented: $showWorkoutPicker) {
                 WorkoutPickerSheet(
@@ -141,7 +137,7 @@ struct HomeView: View {
         modelContext.insert(session)
 
         // Dismiss the readiness sheet first
-        showReadinessCheck = false
+        templateForReadiness = nil
 
         // Generate plan if LLM is configured
         if let profile = profile, profile.preferredLLMProvider != .offline {
@@ -163,14 +159,14 @@ struct HomeView: View {
                 try? await Task.sleep(nanoseconds: 300_000_000) // 0.3 seconds
                 await MainActor.run {
                     print("🏋️ Showing workout view (LLM path)")
-                    showActiveWorkout = true
+                    templateForWorkout = template
                 }
             }
         } else {
             // Show workout after a small delay to allow sheet dismissal
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                 print("🏋️ Showing workout view (offline path)")
-                showActiveWorkout = true
+                templateForWorkout = template
             }
         }
     }
@@ -185,13 +181,12 @@ struct HomeView: View {
         // In the future, we could create an ad-hoc template
         
         if let firstTemplate = templates.first {
-            selectedTemplate = firstTemplate
             todayPlan = nil // No LLM plan - user will follow the custom workout preview
             
             // Show workout after a small delay
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                 print("🏋️ Showing workout view for custom workout")
-                showActiveWorkout = true
+                templateForWorkout = firstTemplate
             }
         } else {
             print("⚠️ No templates available to start workout")

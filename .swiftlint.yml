@@ -1,0 +1,34 @@
+# SwiftLint Configuration for StrengthTracker
+
+# Disable rules that are too strict for this project
+disabled_rules:
+  - trailing_whitespace
+  - line_length
+  - identifier_name
+  - type_body_length
+  - file_length
+  - function_body_length
+  - cyclomatic_complexity
+  - type_name
+  - force_cast
+  - force_try
+  - large_tuple
+  - nesting
+  - function_parameter_count
+  - todo
+  - unused_closure_parameter
+  - implicit_optional_initialization
+  - unused_optional_binding
+  - statement_position
+  - empty_count
+
+# Paths to exclude
+excluded:
+  - Pods
+  - DerivedData
+  - .build
+  - Build
+  - "*.generated.swift"
+
+# Reporter type
+reporter: "github-actions-logging"

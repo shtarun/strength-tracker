@@ -93,13 +93,10 @@ final class WorkoutFlowUITests: XCTestCase {
         
         // Check for readiness options
         let energyOptions = ["High", "OK", "Low"]
-        let sorenessOptions = ["None", "Moderate", "High"]
         
-        for energy in energyOptions {
-            if app.buttons[energy].exists {
-                app.buttons[energy].tap()
-                break
-            }
+        for energy in energyOptions where app.buttons[energy].exists {
+            app.buttons[energy].tap()
+            break
         }
         
         // Continue past readiness
