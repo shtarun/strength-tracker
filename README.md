@@ -2,10 +2,12 @@
 
 An AI-powered iOS strength training app for intermediate lifters. Log workouts fast, get intelligent next-session recommendations, and adapt to your equipment and readiness.
 
+![Version](https://img.shields.io/badge/version-1.0.0-blue)
 ![iOS 17+](https://img.shields.io/badge/iOS-17%2B-blue)
 ![Swift 5.9+](https://img.shields.io/badge/Swift-5.9%2B-orange)
 ![SwiftUI](https://img.shields.io/badge/SwiftUI-✓-green)
 ![SwiftData](https://img.shields.io/badge/SwiftData-✓-purple)
+![License](https://img.shields.io/badge/license-MIT-green)
 
 ## Features
 
@@ -61,8 +63,8 @@ An AI-powered iOS strength training app for intermediate lifters. Log workouts f
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/strength-tracker.git
-   cd strength-tracker
+   git clone https://github.com/shtarun/strength-tracker.git
+   cd strength-tracker/StrengthTracker
    ```
 
 2. **Open in Xcode**
@@ -90,7 +92,8 @@ An AI-powered iOS strength training app for intermediate lifters. Log workouts f
 | [API Reference](docs/API_REFERENCE.md) | LLM provider protocols and response formats |
 | [Developer Guide](docs/DEVELOPER_GUIDE.md) | Development setup and coding conventions |
 | [Plan Compliance](docs/PLAN_COMPLIANCE.md) | Implementation audit against original plan |
-| [**Testing**](docs/TESTING.md) | **Comprehensive test documentation and coverage** |
+| [Testing](docs/TESTING.md) | Comprehensive test documentation and coverage |
+| [**Changelog**](CHANGELOG.md) | **Version history and release notes** |
 
 ## Technology Stack
 
