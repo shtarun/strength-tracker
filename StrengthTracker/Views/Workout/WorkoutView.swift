@@ -153,6 +153,7 @@ struct WorkoutView: View {
             if let plannedExercise = plan?.exercises.first(where: { $0.exerciseName == exercise.name }) {
                 // Create sets from plan
                 var orderIndex = 0
+                let prescription = templateExercise.prescription
 
                 // Warmup sets
                 for warmup in plannedExercise.warmupSets {
@@ -170,8 +171,8 @@ struct WorkoutView: View {
                     }
                 }
 
-                // Top set
-                if let topSet = plannedExercise.topSet {
+                // Top set (only for Top Set + Backoffs progression)
+                if prescription.progressionType == .topSetBackoff, let topSet = plannedExercise.topSet {
                     let set = WorkoutSet(
                         exercise: exercise,
                         setType: .topSet,
@@ -182,37 +183,37 @@ struct WorkoutView: View {
                     )
                     sets.append(set)
                     orderIndex += 1
-                }
 
-                // Backoff sets
-                for backoff in plannedExercise.backoffSets {
-                    for _ in 0..<backoff.setCount {
-                        let set = WorkoutSet(
-                            exercise: exercise,
-                            setType: .backoff,
-                            weight: backoff.weight,
-                            targetReps: backoff.reps,
-                            targetRPE: backoff.rpeCap,
-                            orderIndex: orderIndex
-                        )
-                        sets.append(set)
-                        orderIndex += 1
+                    // Backoff sets (only for Top Set + Backoffs progression)
+                    for backoff in plannedExercise.backoffSets {
+                        for _ in 0..<backoff.setCount {
+                            let set = WorkoutSet(
+                                exercise: exercise,
+                                setType: .backoff,
+                                weight: backoff.weight,
+                                targetReps: backoff.reps,
+                                targetRPE: backoff.rpeCap,
+                                orderIndex: orderIndex
+                            )
+                            sets.append(set)
+                            orderIndex += 1
+                        }
                     }
-                }
-
-                // Working sets
-                for working in plannedExercise.workingSets {
-                    for _ in 0..<working.setCount {
-                        let set = WorkoutSet(
-                            exercise: exercise,
-                            setType: .working,
-                            weight: working.weight,
-                            targetReps: working.reps,
-                            targetRPE: working.rpeCap,
-                            orderIndex: orderIndex
-                        )
-                        sets.append(set)
-                        orderIndex += 1
+                } else {
+                    // Working sets (for Double Progression and Straight Sets)
+                    for working in plannedExercise.workingSets {
+                        for _ in 0..<working.setCount {
+                            let set = WorkoutSet(
+                                exercise: exercise,
+                                setType: .working,
+                                weight: working.weight,
+                                targetReps: working.reps,
+                                targetRPE: working.rpeCap,
+                                orderIndex: orderIndex
+                            )
+                            sets.append(set)
+                            orderIndex += 1
+                        }
                     }
                 }
             } else {

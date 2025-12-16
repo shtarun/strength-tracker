@@ -111,15 +111,20 @@ actor OfflineProgressionEngine {
             )]
         }
 
-        return PlannedExerciseResponse(
-            exerciseName: name,
-            warmupSets: warmupSets,
-            topSet: PlannedSetResponse(
+        // Top set only for Top Set + Backoffs progression
+        let topSet: PlannedSetResponse? = prescription.progressionType == "Top Set + Backoffs"
+            ? PlannedSetResponse(
                 weight: topSetWeight,
                 reps: topSetReps,
                 rpeCap: rpeCap,
                 setCount: 1
-            ),
+            )
+            : nil
+
+        return PlannedExerciseResponse(
+            exerciseName: name,
+            warmupSets: warmupSets,
+            topSet: topSet,
             backoffSets: backoffSets,
             workingSets: workingSets
         )
