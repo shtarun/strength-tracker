@@ -50,10 +50,45 @@
 		042 /* StallDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 142; };
 		043 /* CustomWorkoutSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 143; };
 		044 /* AppearanceMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 144; };
+		T001 /* E1RMCalculatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T101; };
+		T002 /* ExerciseLibraryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T102; };
+		T003 /* LLMServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T103; };
+		T004 /* ModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T104; };
+		T005 /* OfflineProgressionEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T105; };
+		T006 /* PlateMathCalculatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T106; };
+		T007 /* StallDetectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T107; };
+		T008 /* SubstitutionGraphTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T108; };
+		T009 /* TemplateGeneratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T109; };
+		T010 /* UserProfileTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T110; };
+		T011 /* WorkoutSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T111; };
+		U001 /* OnboardingUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = U101; };
+		U002 /* ProfileUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = U102; };
+		U003 /* ProgressUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = U103; };
+		U004 /* TemplatesUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = U104; };
+		U005 /* WorkoutFlowUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = U105; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		PXY001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 600 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 400;
+			remoteInfo = StrengthTracker;
+		};
+		PXY002 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 600 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 400;
+			remoteInfo = StrengthTracker;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		100 /* StrengthTracker.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = StrengthTracker.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		T100 /* StrengthTrackerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = StrengthTrackerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		U100 /* StrengthTrackerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = StrengthTrackerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		101 /* StrengthTrackerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrengthTrackerApp.swift; sourceTree = "<group>"; };
 		102 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		103 /* Goal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Goal.swift; sourceTree = "<group>"; };
@@ -97,10 +132,40 @@
 		140 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		142 /* StallDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StallDetector.swift; sourceTree = "<group>"; };
 		143 /* CustomWorkoutSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomWorkoutSheet.swift; sourceTree = "<group>"; };
+		T101 /* E1RMCalculatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = E1RMCalculatorTests.swift; sourceTree = "<group>"; };
+		T102 /* ExerciseLibraryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseLibraryTests.swift; sourceTree = "<group>"; };
+		T103 /* LLMServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMServiceTests.swift; sourceTree = "<group>"; };
+		T104 /* ModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelTests.swift; sourceTree = "<group>"; };
+		T105 /* OfflineProgressionEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineProgressionEngineTests.swift; sourceTree = "<group>"; };
+		T106 /* PlateMathCalculatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlateMathCalculatorTests.swift; sourceTree = "<group>"; };
+		T107 /* StallDetectorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StallDetectorTests.swift; sourceTree = "<group>"; };
+		T108 /* SubstitutionGraphTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubstitutionGraphTests.swift; sourceTree = "<group>"; };
+		T109 /* TemplateGeneratorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemplateGeneratorTests.swift; sourceTree = "<group>"; };
+		T110 /* UserProfileTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfileTests.swift; sourceTree = "<group>"; };
+		T111 /* WorkoutSessionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutSessionTests.swift; sourceTree = "<group>"; };
+		U101 /* OnboardingUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingUITests.swift; sourceTree = "<group>"; };
+		U102 /* ProfileUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileUITests.swift; sourceTree = "<group>"; };
+		U103 /* ProgressUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressUITests.swift; sourceTree = "<group>"; };
+		U104 /* TemplatesUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemplatesUITests.swift; sourceTree = "<group>"; };
+		U105 /* WorkoutFlowUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutFlowUITests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		200 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		T200 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		U200 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -114,6 +179,8 @@
 			isa = PBXGroup;
 			children = (
 				301 /* StrengthTracker */,
+				T300 /* StrengthTrackerTests */,
+				U300 /* StrengthTrackerUITests */,
 				302 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -136,8 +203,40 @@
 			isa = PBXGroup;
 			children = (
 				100 /* StrengthTracker.app */,
+				T100 /* StrengthTrackerTests.xctest */,
+				U100 /* StrengthTrackerUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		T300 /* StrengthTrackerTests */ = {
+			isa = PBXGroup;
+			children = (
+				T101 /* E1RMCalculatorTests.swift */,
+				T102 /* ExerciseLibraryTests.swift */,
+				T103 /* LLMServiceTests.swift */,
+				T104 /* ModelTests.swift */,
+				T105 /* OfflineProgressionEngineTests.swift */,
+				T106 /* PlateMathCalculatorTests.swift */,
+				T107 /* StallDetectorTests.swift */,
+				T108 /* SubstitutionGraphTests.swift */,
+				T109 /* TemplateGeneratorTests.swift */,
+				T110 /* UserProfileTests.swift */,
+				T111 /* WorkoutSessionTests.swift */,
+			);
+			path = StrengthTrackerTests;
+			sourceTree = "<group>";
+		};
+		U300 /* StrengthTrackerUITests */ = {
+			isa = PBXGroup;
+			children = (
+				U101 /* OnboardingUITests.swift */,
+				U102 /* ProfileUITests.swift */,
+				U103 /* ProgressUITests.swift */,
+				U104 /* TemplatesUITests.swift */,
+				U105 /* WorkoutFlowUITests.swift */,
+			);
+			path = StrengthTrackerUITests;
 			sourceTree = "<group>";
 		};
 		303 /* App */ = {
@@ -308,6 +407,42 @@
 			productReference = 100 /* StrengthTracker.app */;
 			productType = "com.apple.product-type.application";
 		};
+		T400 /* StrengthTrackerTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = T500;
+			buildPhases = (
+				T401 /* Sources */,
+				T200 /* Frameworks */,
+				T402 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				T403 /* PBXTargetDependency */,
+			);
+			name = StrengthTrackerTests;
+			productName = StrengthTrackerTests;
+			productReference = T100 /* StrengthTrackerTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		U400 /* StrengthTrackerUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = U500;
+			buildPhases = (
+				U401 /* Sources */,
+				U200 /* Frameworks */,
+				U402 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				U403 /* PBXTargetDependency */,
+			);
+			name = StrengthTrackerUITests;
+			productName = StrengthTrackerUITests;
+			productReference = U100 /* StrengthTrackerUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -320,6 +455,14 @@
 				TargetAttributes = {
 					400 = {
 						CreatedOnToolsVersion = 15.0;
+					};
+					T400 = {
+						CreatedOnToolsVersion = 15.0;
+						TestTargetID = 400;
+					};
+					U400 = {
+						CreatedOnToolsVersion = 15.0;
+						TestTargetID = 400;
 					};
 				};
 			};
@@ -337,6 +480,8 @@
 			projectRoot = "";
 			targets = (
 				400 /* StrengthTracker */,
+				T400 /* StrengthTrackerTests */,
+				U400 /* StrengthTrackerUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -347,6 +492,20 @@
 			buildActionMask = 2147483647;
 			files = (
 				040 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		T402 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		U402 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -402,7 +561,50 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		T401 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				T001 /* E1RMCalculatorTests.swift in Sources */,
+				T002 /* ExerciseLibraryTests.swift in Sources */,
+				T003 /* LLMServiceTests.swift in Sources */,
+				T004 /* ModelTests.swift in Sources */,
+				T005 /* OfflineProgressionEngineTests.swift in Sources */,
+				T006 /* PlateMathCalculatorTests.swift in Sources */,
+				T007 /* StallDetectorTests.swift in Sources */,
+				T008 /* SubstitutionGraphTests.swift in Sources */,
+				T009 /* TemplateGeneratorTests.swift in Sources */,
+				T010 /* UserProfileTests.swift in Sources */,
+				T011 /* WorkoutSessionTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		U401 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				U001 /* OnboardingUITests.swift in Sources */,
+				U002 /* ProfileUITests.swift in Sources */,
+				U003 /* ProgressUITests.swift in Sources */,
+				U004 /* TemplatesUITests.swift in Sources */,
+				U005 /* WorkoutFlowUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		T403 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 400 /* StrengthTracker */;
+			targetProxy = PXY001 /* PBXContainerItemProxy */;
+		};
+		U403 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 400 /* StrengthTracker */;
+			targetProxy = PXY002 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		700 /* Debug */ = {
@@ -580,6 +782,80 @@
 			};
 			name = Release;
 		};
+		T702 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.yourcompany.StrengthTrackerTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/StrengthTracker.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/StrengthTracker";
+			};
+			name = Debug;
+		};
+		T703 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.yourcompany.StrengthTrackerTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/StrengthTracker.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/StrengthTracker";
+			};
+			name = Release;
+		};
+		U702 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.yourcompany.StrengthTrackerUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = StrengthTracker;
+			};
+			name = Debug;
+		};
+		U703 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.yourcompany.StrengthTrackerUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = StrengthTracker;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -588,6 +864,24 @@
 			buildConfigurations = (
 				702 /* Debug */,
 				703 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		T500 /* Build configuration list for PBXNativeTarget "StrengthTrackerTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				T702 /* Debug */,
+				T703 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		U500 /* Build configuration list for PBXNativeTarget "StrengthTrackerUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				U702 /* Debug */,
+				U703 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

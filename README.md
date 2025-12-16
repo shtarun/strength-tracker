@@ -90,6 +90,7 @@ An AI-powered iOS strength training app for intermediate lifters. Log workouts f
 | [API Reference](docs/API_REFERENCE.md) | LLM provider protocols and response formats |
 | [Developer Guide](docs/DEVELOPER_GUIDE.md) | Development setup and coding conventions |
 | [Plan Compliance](docs/PLAN_COMPLIANCE.md) | Implementation audit against original plan |
+| [**Testing**](docs/TESTING.md) | **Comprehensive test documentation and coverage** |
 
 ## Technology Stack
 
@@ -160,27 +161,56 @@ The app adapts your workout based on how you feel:
 
 ## Testing
 
-Run the test suite:
+The project uses a standard iOS two-folder test architecture:
+
+| Folder | Framework | Purpose |
+|--------|-----------|---------|
+| `StrengthTrackerTests/` | XCTest | Unit tests (fast, isolated) |
+| `StrengthTrackerUITests/` | XCUITest | UI tests (user flow integration) |
+
+This separation is **iOS best practice** because:
+- Unit tests run in milliseconds and are ideal for CI/every-commit testing
+- UI tests run in seconds and simulate actual user interactions on simulators/devices
+
+### Running Tests
 
 ```bash
-# Via Swift Package Manager
-cd StrengthTracker
-swift test
+# Run all tests
+xcodebuild test -project StrengthTracker.xcodeproj \
+  -scheme StrengthTracker \
+  -destination 'platform=iOS Simulator,name=iPhone 17'
 
-# Or in Xcode
-⌘+U
+# Run only unit tests (fast)
+xcodebuild test -only-testing:StrengthTrackerTests ...
+
+# Run only UI tests
+xcodebuild test -only-testing:StrengthTrackerUITests ...
+
+# Or in Xcode: ⌘+U
 ```
 
-**141 tests** covering:
+### Test Coverage
 
-| Test Suite | Coverage |
-|-----------|----------|
-| `E1RMCalculatorTests` | e1RM calculations, Epley/Brzycki formulas |
+| Test Category | Files | Description |
+|--------------|-------|-------------|
+| **Unit Tests** | 11 | Models, enums, calculators, services |
+| **UI Tests** | 5 | Onboarding, workout, profile, progress, templates |
+
+**Key test suites:**
+
+| Suite | Coverage |
+|-------|----------|
+| `E1RMCalculatorTests` | e1RM calculations, Epley formula |
 | `PlateMathCalculatorTests` | Plate loading, warmup generation |
-| `ModelTests` | SwiftData entities, relationships, computed properties |
-| `OfflineProgressionEngineTests` | Progression rules, readiness adaptation, insights |
-| `SubstitutionGraphTests` | Exercise substitutions, equipment filtering |
-| `EnumTests` | All enum cases and properties |
+| `ModelTests` | SwiftData entities, enums, computed properties |
+| `WorkoutSessionTests` | Sessions, sets, readiness, e1RM |
+| `StallDetectorTests` | Plateau detection, fix suggestions |
+| `TemplateGeneratorTests` | Workout templates, prescriptions |
+| `UserProfileTests` | Profile, appearance mode, API keys |
+| `OnboardingUITests` | Full onboarding flow |
+| `WorkoutFlowUITests` | Workout logging user journey |
+
+📖 **See [Testing Documentation](docs/TESTING.md) for detailed test descriptions, examples, and CI/CD setup.**
 
 ## Optional: LLM API Keys
 
