@@ -200,7 +200,7 @@ final class SubstitutionGraphTests: XCTestCase {
 
 // MARK: - Split Enum Tests
 
-final class SplitEnumTests: XCTestCase {
+final class SplitSubstitutionEnumTests: XCTestCase {
     
     func testSplit_AllCases() {
         XCTAssertTrue(Split.allCases.contains(.upperLower))

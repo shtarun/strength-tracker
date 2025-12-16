@@ -4,6 +4,10 @@ import SwiftData
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var userProfiles: [UserProfile]
+    
+    private var appearanceMode: AppearanceMode {
+        userProfiles.first?.appearanceMode ?? .auto
+    }
 
     var body: some View {
         Group {
@@ -13,6 +17,7 @@ struct ContentView: View {
                 MainTabView()
             }
         }
+        .preferredColorScheme(appearanceMode.colorScheme)
     }
 }
 

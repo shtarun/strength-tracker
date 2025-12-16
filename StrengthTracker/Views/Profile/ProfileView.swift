@@ -61,6 +61,15 @@ struct ProfileView: View {
                                 Text(unit.rawValue).tag(unit)
                             }
                         }
+                        
+                        Picker("Appearance", selection: Binding(
+                            get: { profile.appearanceMode },
+                            set: { profile.appearanceMode = $0 }
+                        )) {
+                            ForEach(AppearanceMode.allCases) { mode in
+                                Label(mode.rawValue, systemImage: mode.icon).tag(mode)
+                            }
+                        }
 
                         Toggle("Use RPE", isOn: Binding(
                             get: { profile.rpeFamiliarity },

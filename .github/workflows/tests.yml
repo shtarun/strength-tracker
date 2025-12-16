@@ -18,10 +18,19 @@ jobs:
     - name: Select Xcode
       run: sudo xcode-select -s /Applications/Xcode_15.2.app/Contents/Developer
       
-    - name: Run Tests
+    - name: Show Xcode version
+      run: xcodebuild -version
+      
+    - name: Run Unit Tests
       run: |
-        cd StrengthTracker
-        swift test
+        set -o pipefail
+        xcodebuild test \
+          -project StrengthTracker.xcodeproj \
+          -scheme StrengthTracker \
+          -destination 'platform=iOS Simulator,name=iPhone 15 Pro,OS=17.2' \
+          -only-testing:StrengthTrackerTests \
+          CODE_SIGNING_ALLOWED=NO \
+          2>&1 | xcpretty --color --test
 
   build:
     name: Build iOS App
@@ -39,28 +48,26 @@ jobs:
       
     - name: Build for Simulator
       run: |
-        cd StrengthTracker
+        set -o pipefail
         xcodebuild build \
           -project StrengthTracker.xcodeproj \
           -scheme StrengthTracker \
           -destination 'platform=iOS Simulator,name=iPhone 15 Pro,OS=17.2' \
           -configuration Debug \
           CODE_SIGNING_ALLOWED=NO \
-          | xcpretty --color || true
+          2>&1 | xcpretty --color
 
   lint:
     name: Swift Lint
     runs-on: macos-14
+    continue-on-error: true
     
     steps:
     - name: Checkout
       uses: actions/checkout@v4
+    
+    - name: Install SwiftLint
+      run: brew install swiftlint
       
     - name: Run SwiftLint
-      run: |
-        if command -v swiftlint &> /dev/null; then
-          cd StrengthTracker
-          swiftlint lint --reporter github-actions-logging || true
-        else
-          echo "SwiftLint not installed, skipping..."
-        fi
+      run: swiftlint lint --reporter github-actions-logging

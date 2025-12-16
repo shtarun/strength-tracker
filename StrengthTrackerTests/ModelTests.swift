@@ -109,7 +109,7 @@ final class MovementPatternEnumTests: XCTestCase {
 
 // MARK: - Goal Enum Tests
 
-final class GoalEnumTests: XCTestCase {
+final class GoalModelEnumTests: XCTestCase {
     
     func testGoal_AllCases() {
         XCTAssertTrue(Goal.allCases.contains(.strength))

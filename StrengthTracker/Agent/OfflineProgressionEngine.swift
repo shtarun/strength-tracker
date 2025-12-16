@@ -102,7 +102,7 @@ actor OfflineProgressionEngine {
         // Generate working sets for double progression
         var workingSets: [PlannedSetResponse] = []
         if prescription.progressionType == "Double Progression" {
-            let (minReps, maxReps) = parseRepsRange(prescription.topSetRepsRange)
+            let (minReps, _) = parseRepsRange(prescription.topSetRepsRange)
             workingSets = [PlannedSetResponse(
                 weight: topSetWeight,
                 reps: minReps,

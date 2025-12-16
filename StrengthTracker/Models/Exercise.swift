@@ -12,6 +12,11 @@ final class Exercise {
     var isCompound: Bool
     var defaultProgressionType: ProgressionType
     var instructions: String?
+    var formCuesData: Data?
+    var commonMistakesData: Data?
+    var isMobilityRoutine: Bool = false
+    var routineType: String? = nil
+    var durationSeconds: Int? = nil
 
     init(
         id: UUID = UUID(),
@@ -22,7 +27,12 @@ final class Exercise {
         equipmentRequired: [Equipment],
         isCompound: Bool = true,
         defaultProgressionType: ProgressionType = .topSetBackoff,
-        instructions: String? = nil
+        instructions: String? = nil,
+        formCues: [String] = [],
+        commonMistakes: [String] = [],
+        isMobilityRoutine: Bool = false,
+        routineType: String? = nil,
+        durationSeconds: Int? = nil
     ) {
         self.id = id
         self.name = name
@@ -33,6 +43,11 @@ final class Exercise {
         self.isCompound = isCompound
         self.defaultProgressionType = defaultProgressionType
         self.instructions = instructions
+        self.formCuesData = try? JSONEncoder().encode(formCues)
+        self.commonMistakesData = try? JSONEncoder().encode(commonMistakes)
+        self.isMobilityRoutine = isMobilityRoutine
+        self.routineType = routineType
+        self.durationSeconds = durationSeconds
     }
 
     var primaryMuscles: [Muscle] {
@@ -64,6 +79,26 @@ final class Exercise {
             equipmentRequiredData = try? JSONEncoder().encode(newValue)
         }
     }
+    
+    var formCues: [String] {
+        get {
+            guard let data = formCuesData else { return [] }
+            return (try? JSONDecoder().decode([String].self, from: data)) ?? []
+        }
+        set {
+            formCuesData = try? JSONEncoder().encode(newValue)
+        }
+    }
+    
+    var commonMistakes: [String] {
+        get {
+            guard let data = commonMistakesData else { return [] }
+            return (try? JSONDecoder().decode([String].self, from: data)) ?? []
+        }
+        set {
+            commonMistakesData = try? JSONEncoder().encode(newValue)
+        }
+    }
 
     var allMuscles: [Muscle] {
         primaryMuscles + secondaryMuscles
@@ -76,6 +111,10 @@ final class Exercise {
             return 2.0 // kg per dumbbell
         }
         return 2.5
+    }
+    
+    var hasFormGuidance: Bool {
+        !formCues.isEmpty || !commonMistakes.isEmpty
     }
 }
 

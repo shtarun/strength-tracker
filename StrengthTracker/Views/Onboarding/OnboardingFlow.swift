@@ -121,7 +121,7 @@ struct OnboardingFlow: View {
         }
     }
 
-    private func completeOnboarding() {
+    @MainActor private func completeOnboarding() {
         // Create user profile
         let profile = UserProfile(
             name: name,
