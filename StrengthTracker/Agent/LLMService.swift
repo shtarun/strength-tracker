@@ -204,6 +204,12 @@ struct CustomExercisePlan: Codable {
     let rpeCap: Double
     let notes: String?
     let suggestedWeight: Double? // Based on history if available
+    
+    // Exercise metadata for creating new exercises if not in library
+    let movementPattern: String? // e.g., "horizontalPush", "squat", "hinge"
+    let primaryMuscles: [String]? // e.g., ["chest", "triceps"]
+    let isCompound: Bool?
+    let equipmentRequired: [String]? // e.g., ["barbell", "bench"]
 }
 
 // MARK: - LLM Service Manager
@@ -472,12 +478,16 @@ enum CoachPrompts {
       "workoutName": "string (descriptive name)",
       "exercises": [
         {
-          "exerciseName": "string (must match an exercise from availableExercises)",
+          "exerciseName": "string (prefer exercises from availableExercises, but can suggest others)",
           "sets": number,
           "reps": "string (e.g., '8-10' or '5')",
           "rpeCap": number (7-9),
           "notes": "string or null",
-          "suggestedWeight": number or null
+          "suggestedWeight": number or null,
+          "movementPattern": "string (one of: squat, hinge, lunge, horizontalPush, horizontalPull, verticalPush, verticalPull, carry, isolation, core)",
+          "primaryMuscles": ["string (e.g., 'chest', 'back', 'quads', 'hamstrings', 'shoulders', 'biceps', 'triceps', 'glutes', 'calves', 'abs', 'forearms', 'traps', 'lats')"],
+          "isCompound": boolean,
+          "equipmentRequired": ["string (e.g., 'barbell', 'dumbbell', 'cable', 'machine', 'bodyweight', 'bench', 'rack')"]
         }
       ],
       "reasoning": "string (brief explanation of exercise selection)",

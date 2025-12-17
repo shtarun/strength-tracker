@@ -6,6 +6,7 @@ struct CustomWorkoutSheet: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var exercises: [Exercise]
     @Query(sort: \WorkoutSession.date, order: .reverse) private var recentSessions: [WorkoutSession]
+    @Query(sort: \WorkoutTemplate.dayNumber) private var existingTemplates: [WorkoutTemplate]
     
     let profile: UserProfile?
     let onStartWorkout: (CustomWorkoutResponse) -> Void
@@ -15,6 +16,8 @@ struct CustomWorkoutSheet: View {
     @State private var isGenerating = false
     @State private var generatedWorkout: CustomWorkoutResponse?
     @State private var errorMessage: String?
+    @State private var showSaveConfirmation = false
+    @State private var savedTemplateName: String?
     
     @FocusState private var isPromptFocused: Bool
     
@@ -259,6 +262,33 @@ struct CustomWorkoutSheet: View {
                     .foregroundStyle(.white)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
+                
+                Button {
+                    saveAsTemplate(workout)
+                } label: {
+                    HStack {
+                        Image(systemName: "square.and.arrow.down")
+                        Text("Save as Template")
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color(.systemGray5))
+                    .foregroundStyle(.primary)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+            }
+            
+            // Save confirmation
+            if let templateName = savedTemplateName {
+                HStack {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
+                    Text("Saved as '\(templateName)'")
+                        .font(.subheadline)
+                }
+                .padding()
+                .background(Color.green.opacity(0.1))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
             }
         }
     }
@@ -290,6 +320,213 @@ struct CustomWorkoutSheet: View {
     
     private var canGenerate: Bool {
         !prompt.isEmpty && profile?.preferredLLMProvider != .offline
+    }
+    
+    private func saveAsTemplate(_ workout: CustomWorkoutResponse) {
+        // Create a new template with the next day number
+        let nextDayNumber = (existingTemplates.map { $0.dayNumber }.max() ?? 0) + 1
+        
+        let template = WorkoutTemplate(
+            name: workout.workoutName,
+            dayNumber: nextDayNumber,
+            targetDuration: workout.estimatedDuration
+        )
+        
+        // Create ExerciseTemplates for each exercise
+        for (index, exercisePlan) in workout.exercises.enumerated() {
+            // Find matching exercise from library
+            var matchingExercise = exercises.first {
+                $0.name.lowercased() == exercisePlan.exerciseName.lowercased()
+            }
+            
+            // If exercise doesn't exist in library, create it from LLM metadata
+            if matchingExercise == nil {
+                matchingExercise = createExerciseFromPlan(exercisePlan)
+            }
+            
+            // Parse reps range (e.g., "8-10" or "5")
+            let repsComponents = exercisePlan.reps.split(separator: "-")
+            let minReps: Int
+            let maxReps: Int
+            
+            if repsComponents.count == 2 {
+                minReps = Int(repsComponents[0]) ?? 8
+                maxReps = Int(repsComponents[1]) ?? 10
+            } else {
+                minReps = Int(exercisePlan.reps) ?? 8
+                maxReps = minReps
+            }
+            
+            // Create prescription from the workout plan
+            let prescription = Prescription(
+                progressionType: .straightSets,
+                topSetRepsMin: minReps,
+                topSetRepsMax: maxReps,
+                topSetRPECap: exercisePlan.rpeCap,
+                backoffSets: 0,
+                backoffRepsMin: minReps,
+                backoffRepsMax: maxReps,
+                backoffLoadDropPercent: 0,
+                workingSets: exercisePlan.sets
+            )
+            
+            let exerciseTemplate = ExerciseTemplate(
+                exercise: matchingExercise,
+                orderIndex: index,
+                isOptional: false,
+                prescription: prescription
+            )
+            
+            template.exercises.append(exerciseTemplate)
+            modelContext.insert(exerciseTemplate)
+        }
+        
+        // Insert the template
+        modelContext.insert(template)
+        
+        // Save to persist
+        try? modelContext.save()
+        
+        // Show confirmation
+        withAnimation {
+            savedTemplateName = workout.workoutName
+        }
+        
+        // Hide confirmation after 3 seconds
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+            withAnimation {
+                savedTemplateName = nil
+            }
+        }
+    }
+    
+    /// Creates a new Exercise from LLM-provided metadata when exercise doesn't exist in library
+    private func createExerciseFromPlan(_ plan: CustomExercisePlan) -> Exercise {
+        // Parse movement pattern from LLM response or infer from name
+        let movementPattern = parseMovementPattern(plan.movementPattern, exerciseName: plan.exerciseName)
+        
+        // Parse primary muscles from LLM response or infer from movement pattern
+        let primaryMuscles = parseMuscles(plan.primaryMuscles, movementPattern: movementPattern)
+        
+        // Parse equipment from LLM response or use defaults
+        let equipment = parseEquipment(plan.equipmentRequired, exerciseName: plan.exerciseName)
+        
+        // Determine if compound based on LLM response or movement pattern
+        let isCompound = plan.isCompound ?? (movementPattern != .isolation)
+        
+        let exercise = Exercise(
+            name: plan.exerciseName,
+            movementPattern: movementPattern,
+            primaryMuscles: primaryMuscles,
+            secondaryMuscles: [],
+            equipmentRequired: equipment,
+            isCompound: isCompound,
+            defaultProgressionType: isCompound ? .topSetBackoff : .doubleProgression,
+            instructions: plan.notes
+        )
+        
+        modelContext.insert(exercise)
+        return exercise
+    }
+    
+    /// Parses movement pattern from LLM string or infers from exercise name
+    private func parseMovementPattern(_ pattern: String?, exerciseName: String) -> MovementPattern {
+        if let pattern = pattern?.lowercased() {
+            switch pattern {
+            case "squat": return .squat
+            case "hinge": return .hinge
+            case "lunge": return .lunge
+            case "horizontalpush", "horizontal_push", "horizontal push": return .horizontalPush
+            case "horizontalpull", "horizontal_pull", "horizontal pull": return .horizontalPull
+            case "verticalpush", "vertical_push", "vertical push": return .verticalPush
+            case "verticalpull", "vertical_pull", "vertical pull": return .verticalPull
+            case "carry": return .carry
+            case "isolation": return .isolation
+            case "mobility": return .mobility
+            case "cardio": return .cardio
+            default: break
+            }
+        }
+        
+        // Infer from exercise name
+        let name = exerciseName.lowercased()
+        if name.contains("squat") { return .squat }
+        if name.contains("deadlift") || name.contains("rdl") || name.contains("hip thrust") { return .hinge }
+        if name.contains("lunge") || name.contains("split squat") || name.contains("step") { return .lunge }
+        if name.contains("bench") || name.contains("push-up") || name.contains("pushup") || name.contains("chest press") { return .horizontalPush }
+        if name.contains("row") || name.contains("pull") && !name.contains("pulldown") && !name.contains("pull-up") { return .horizontalPull }
+        if name.contains("press") && (name.contains("overhead") || name.contains("shoulder") || name.contains("military")) { return .verticalPush }
+        if name.contains("pulldown") || name.contains("pull-up") || name.contains("pullup") || name.contains("chin") || name.contains("lat") { return .verticalPull }
+        if name.contains("carry") || name.contains("walk") { return .carry }
+        if name.contains("curl") || name.contains("extension") || name.contains("raise") || name.contains("fly") || name.contains("kickback") { return .isolation }
+        if name.contains("crunch") || name.contains("plank") || name.contains("ab") || name.contains("core") { return .isolation } // Core exercises are isolation
+        
+        return .isolation // Default fallback
+    }
+    
+    /// Parses muscles from LLM strings or infers from movement pattern
+    private func parseMuscles(_ muscles: [String]?, movementPattern: MovementPattern) -> [Muscle] {
+        if let muscles = muscles, !muscles.isEmpty {
+            return muscles.compactMap { muscleString -> Muscle? in
+                let name = muscleString.lowercased()
+                switch name {
+                case "chest", "pecs", "pectorals": return .chest
+                case "lats", "latissimus": return .lats
+                case "upper back", "upperback": return .upperBack
+                case "lower back", "lowerback": return .lowerBack
+                case "quads", "quadriceps": return .quads
+                case "hamstrings", "hams": return .hamstrings
+                case "front delt", "front delts", "frontdelt", "front shoulders": return .frontDelt
+                case "side delt", "side delts", "sidedelt", "lateral delt": return .sideDelt
+                case "rear delt", "rear delts", "reardelt", "posterior delt": return .rearDelt
+                case "shoulders", "delts", "deltoids": return .frontDelt // Default to front delt for generic shoulders
+                case "biceps": return .biceps
+                case "triceps": return .triceps
+                case "glutes": return .glutes
+                case "calves": return .calves
+                case "abs", "core", "abdominals": return .core
+                case "forearms": return .forearms
+                case "traps", "trapezius": return .traps
+                default: return nil
+                }
+            }
+        }
+        
+        // Infer from movement pattern using its primaryMuscleGroups
+        return movementPattern.primaryMuscleGroups
+    }
+    
+    /// Parses equipment from LLM strings or infers from exercise name
+    private func parseEquipment(_ equipment: [String]?, exerciseName: String) -> [Equipment] {
+        if let equipment = equipment, !equipment.isEmpty {
+            return equipment.compactMap { equipString -> Equipment? in
+                let name = equipString.lowercased()
+                switch name {
+                case "barbell", "bar": return .barbell
+                case "dumbbell", "dumbbells", "db": return .dumbbell
+                case "cable", "cables": return .cable
+                case "machine", "machines": return .machine
+                case "bodyweight", "body weight", "bw": return .bodyweight
+                case "bench": return .bench
+                case "rack", "squat rack", "power rack": return .rack
+                case "pullup bar", "pull-up bar", "chinup bar": return .pullUpBar
+                case "band", "bands", "resistance band": return .bands
+                default: return nil
+                }
+            }
+        }
+        
+        // Infer from exercise name
+        let name = exerciseName.lowercased()
+        if name.contains("barbell") || name.contains("bb ") { return [.barbell] }
+        if name.contains("dumbbell") || name.contains("db ") { return [.dumbbell] }
+        if name.contains("cable") { return [.cable] }
+        if name.contains("machine") { return [.machine] }
+        if name.contains("bodyweight") || name.contains("push-up") || name.contains("pull-up") || name.contains("dip") { return [.bodyweight] }
+        if name.contains("bench press") { return [.barbell, .bench] }
+        if name.contains("squat") && !name.contains("goblet") { return [.barbell, .rack] }
+        
+        return [.dumbbell] // Default fallback
     }
     
     private func generateWorkout() {

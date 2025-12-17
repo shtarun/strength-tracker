@@ -6,6 +6,7 @@ struct HomeView: View {
     @Query private var userProfiles: [UserProfile]
     @Query(sort: \WorkoutTemplate.dayNumber) private var templates: [WorkoutTemplate]
     @Query(sort: \WorkoutSession.date, order: .reverse) private var recentSessions: [WorkoutSession]
+    @Query private var exercises: [Exercise]
 
     @State private var showReadinessCheck = false
     @State private var showActiveWorkout = false
@@ -175,22 +176,126 @@ struct HomeView: View {
         print("🏋️ Starting custom workout: \(response.workoutName)")
         print("🏋️ Custom workout has \(response.exercises.count) exercises")
         
-        // For custom workouts, we won't use the template-based workout view
-        // Instead, we'll create a session and show a summary of what to do
-        // For now, let's just use the first template as a base if available
-        // In the future, we could create an ad-hoc template
+        // Create an ad-hoc template from the custom workout response
+        let customTemplate = WorkoutTemplate(
+            name: response.workoutName,
+            dayNumber: 0, // 0 indicates ad-hoc/custom workout
+            targetDuration: response.estimatedDuration
+        )
         
-        if let firstTemplate = templates.first {
-            todayPlan = nil // No LLM plan - user will follow the custom workout preview
-            
-            // Show workout after a small delay
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                print("🏋️ Showing workout view for custom workout")
-                templateForWorkout = firstTemplate
+        // Create ExerciseTemplates for each exercise in the custom workout
+        for (index, exercisePlan) in response.exercises.enumerated() {
+            // Find matching exercise from library by name
+            let matchingExercise = exercises.first { 
+                $0.name.lowercased() == exercisePlan.exerciseName.lowercased() 
             }
-        } else {
-            print("⚠️ No templates available to start workout")
+            
+            // Parse reps range (e.g., "8-10" or "5")
+            let repsComponents = exercisePlan.reps.split(separator: "-")
+            let minReps: Int
+            let maxReps: Int
+            
+            if repsComponents.count == 2 {
+                minReps = Int(repsComponents[0]) ?? 8
+                maxReps = Int(repsComponents[1]) ?? 10
+            } else {
+                minReps = Int(exercisePlan.reps) ?? 8
+                maxReps = minReps
+            }
+            
+            // Create prescription from the custom workout plan
+            let prescription = Prescription(
+                progressionType: .straightSets, // Custom workouts use straight sets
+                topSetRepsMin: minReps,
+                topSetRepsMax: maxReps,
+                topSetRPECap: exercisePlan.rpeCap,
+                backoffSets: 0, // No backoffs for custom/straight sets
+                backoffRepsMin: minReps,
+                backoffRepsMax: maxReps,
+                backoffLoadDropPercent: 0,
+                workingSets: exercisePlan.sets // All sets are working sets
+            )
+            
+            let exerciseTemplate = ExerciseTemplate(
+                exercise: matchingExercise,
+                orderIndex: index,
+                isOptional: false,
+                prescription: prescription
+            )
+            
+            // Store exercise name if we couldn't find a match (for display purposes)
+            if matchingExercise == nil {
+                print("⚠️ Exercise not found in library: \(exercisePlan.exerciseName)")
+            }
+            
+            customTemplate.exercises.append(exerciseTemplate)
+            modelContext.insert(exerciseTemplate)
         }
+        
+        // Insert the custom template
+        modelContext.insert(customTemplate)
+        
+        // Convert custom workout to plan format for WorkoutView
+        todayPlan = convertCustomWorkoutToPlan(response: response)
+        
+        // Show workout after a small delay
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            print("🏋️ Showing workout view for custom workout with \(customTemplate.exercises.count) exercises")
+            templateForWorkout = customTemplate
+        }
+    }
+    
+    /// Converts CustomWorkoutResponse to TodayPlanResponse format for WorkoutView compatibility
+    private func convertCustomWorkoutToPlan(response: CustomWorkoutResponse) -> TodayPlanResponse {
+        let exercisePlans = response.exercises.map { exercise -> PlannedExerciseResponse in
+            // Parse reps for working sets
+            let repsComponents = exercise.reps.split(separator: "-")
+            let targetReps: Int
+            if repsComponents.count == 2 {
+                // Use middle of range
+                let min = Int(repsComponents[0]) ?? 8
+                let max = Int(repsComponents[1]) ?? 10
+                targetReps = (min + max) / 2
+            } else {
+                targetReps = Int(exercise.reps) ?? 8
+            }
+            
+            // Create warmup sets (lighter weights building up)
+            var warmupSets: [PlannedSetResponse] = []
+            if let suggestedWeight = exercise.suggestedWeight, suggestedWeight > 20 {
+                // Add 2-3 warmup sets at progressively higher weights
+                warmupSets = [
+                    PlannedSetResponse(weight: suggestedWeight * 0.5, reps: 10, rpeCap: 5.0, setCount: 1),
+                    PlannedSetResponse(weight: suggestedWeight * 0.7, reps: 6, rpeCap: 6.0, setCount: 1)
+                ]
+            }
+            
+            // Working sets (all sets at same weight for custom workouts)
+            let workingSets = [
+                PlannedSetResponse(
+                    weight: exercise.suggestedWeight ?? 0,
+                    reps: targetReps,
+                    rpeCap: exercise.rpeCap,
+                    setCount: exercise.sets
+                )
+            ]
+            
+            return PlannedExerciseResponse(
+                exerciseName: exercise.exerciseName,
+                warmupSets: warmupSets,
+                topSet: nil, // Custom workouts use straight sets, not top set + backoffs
+                backoffSets: [],
+                workingSets: workingSets
+            )
+        }
+        
+        return TodayPlanResponse(
+            exercises: exercisePlans,
+            substitutions: [],
+            adjustments: [],
+            reasoning: [response.reasoning],
+            estimatedDuration: response.estimatedDuration
+        )
     }
 
     private func buildCoachContext(template: WorkoutTemplate, readiness: Readiness) -> CoachContext {

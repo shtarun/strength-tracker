@@ -3,7 +3,7 @@ import Foundation
 class OpenAIProvider: LLMProvider {
     let providerType: LLMProviderType = .openai
     private let apiKey: String
-    private let model = "gpt-4o"
+    private let model = "gpt-4o-mini"
     private let baseURL = "https://api.openai.com/v1/chat/completions"
 
     init(apiKey: String) {
@@ -87,12 +87,13 @@ class OpenAIProvider: LLMProvider {
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
+        request.timeoutInterval = 120 // 2 minutes timeout for AI generation
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
 
         let body: [String: Any] = [
             "model": model,
-            "max_tokens": 4096,
+            "max_completion_tokens": 4096,
             "response_format": ["type": "json_object"],
             "messages": [
                 ["role": "system", "content": CoachPrompts.systemPrompt],
