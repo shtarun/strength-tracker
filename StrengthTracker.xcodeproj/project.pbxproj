@@ -50,6 +50,8 @@
 		042 /* StallDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 142 /* StallDetector.swift */; };
 		043 /* CustomWorkoutSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 143 /* CustomWorkoutSheet.swift */; };
 		044 /* AppearanceMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 144 /* AppearanceMode.swift */; };
+		045 /* DataTransferService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 145 /* DataTransferService.swift */; };
+		046 /* DataManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 146 /* DataManagementView.swift */; };
 		T001 /* E1RMCalculatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T101 /* E1RMCalculatorTests.swift */; };
 		T002 /* ExerciseLibraryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T102 /* ExerciseLibraryTests.swift */; };
 		T003 /* LLMServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T103 /* LLMServiceTests.swift */; };
@@ -61,6 +63,7 @@
 		T009 /* TemplateGeneratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T109 /* TemplateGeneratorTests.swift */; };
 		T010 /* UserProfileTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T110 /* UserProfileTests.swift */; };
 		T011 /* WorkoutSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T111 /* WorkoutSessionTests.swift */; };
+		T012 /* DataTransferServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T112 /* DataTransferServiceTests.swift */; };
 		U001 /* OnboardingUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = U101 /* OnboardingUITests.swift */; };
 		U002 /* ProfileUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = U102 /* ProfileUITests.swift */; };
 		U003 /* ProgressUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = U103 /* ProgressUITests.swift */; };
@@ -130,6 +133,8 @@
 		142 /* StallDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StallDetector.swift; sourceTree = "<group>"; };
 		143 /* CustomWorkoutSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomWorkoutSheet.swift; sourceTree = "<group>"; };
 		144 /* AppearanceMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearanceMode.swift; sourceTree = "<group>"; };
+		145 /* DataTransferService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataTransferService.swift; sourceTree = "<group>"; };
+		146 /* DataManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataManagementView.swift; sourceTree = "<group>"; };
 		T100 /* StrengthTrackerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = StrengthTrackerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		T101 /* E1RMCalculatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = E1RMCalculatorTests.swift; sourceTree = "<group>"; };
 		T102 /* ExerciseLibraryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseLibraryTests.swift; sourceTree = "<group>"; };
@@ -142,6 +147,7 @@
 		T109 /* TemplateGeneratorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemplateGeneratorTests.swift; sourceTree = "<group>"; };
 		T110 /* UserProfileTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfileTests.swift; sourceTree = "<group>"; };
 		T111 /* WorkoutSessionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutSessionTests.swift; sourceTree = "<group>"; };
+		T112 /* DataTransferServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataTransferServiceTests.swift; sourceTree = "<group>"; };
 		U100 /* StrengthTrackerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = StrengthTrackerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		U101 /* OnboardingUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingUITests.swift; sourceTree = "<group>"; };
 		U102 /* ProfileUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileUITests.swift; sourceTree = "<group>"; };
@@ -251,6 +257,7 @@
 				124 /* SubstitutionGraph.swift */,
 				125 /* TemplateGenerator.swift */,
 				142 /* StallDetector.swift */,
+				145 /* DataTransferService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -353,6 +360,7 @@
 			isa = PBXGroup;
 			children = (
 				139 /* ProfileView.swift */,
+				146 /* DataManagementView.swift */,
 			);
 			path = Profile;
 			sourceTree = "<group>";
@@ -371,6 +379,7 @@
 				T109 /* TemplateGeneratorTests.swift */,
 				T110 /* UserProfileTests.swift */,
 				T111 /* WorkoutSessionTests.swift */,
+				T112 /* DataTransferServiceTests.swift */,
 			);
 			path = StrengthTrackerTests;
 			sourceTree = "<group>";
@@ -558,6 +567,8 @@
 				042 /* StallDetector.swift in Sources */,
 				043 /* CustomWorkoutSheet.swift in Sources */,
 				044 /* AppearanceMode.swift in Sources */,
+				045 /* DataTransferService.swift in Sources */,
+				046 /* DataManagementView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -576,6 +587,7 @@
 				T009 /* TemplateGeneratorTests.swift in Sources */,
 				T010 /* UserProfileTests.swift in Sources */,
 				T011 /* WorkoutSessionTests.swift in Sources */,
+				T012 /* DataTransferServiceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

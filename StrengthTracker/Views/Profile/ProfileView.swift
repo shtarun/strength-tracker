@@ -8,6 +8,7 @@ struct ProfileView: View {
     @State private var showEquipmentEditor = false
     @State private var showAPISettings = false
     @State private var showResetConfirmation = false
+    @State private var showDataManagement = false
 
     private var profile: UserProfile? { userProfiles.first }
 
@@ -129,6 +130,19 @@ struct ProfileView: View {
 
                     // Data
                     Section("Data") {
+                        Button {
+                            showDataManagement = true
+                        } label: {
+                            HStack {
+                                Label("Export & Import", systemImage: "arrow.up.arrow.down.circle")
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        
                         Button(role: .destructive) {
                             showResetConfirmation = true
                         } label: {
@@ -157,6 +171,9 @@ struct ProfileView: View {
                 if let profile = profile {
                     APISettingsSheet(profile: profile)
                 }
+            }
+            .sheet(isPresented: $showDataManagement) {
+                DataManagementView()
             }
             .alert("Reset All Data?", isPresented: $showResetConfirmation) {
                 Button("Cancel", role: .cancel) {}
