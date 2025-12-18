@@ -422,7 +422,8 @@ struct CustomWorkoutSheet: View {
             equipmentRequired: equipment,
             isCompound: isCompound,
             defaultProgressionType: isCompound ? .topSetBackoff : .doubleProgression,
-            instructions: plan.notes
+            instructions: plan.notes,
+            youtubeVideoURL: plan.youtubeVideoURL
         )
         
         modelContext.insert(exercise)

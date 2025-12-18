@@ -63,6 +63,7 @@ struct WorkoutView: View {
                                 exercise: exercise,
                                 templateExercise: templateExercise,
                                 planData: plan?.exercises.first { $0.exerciseName == exercise.name },
+                                showYouTubeLinks: profile?.showYouTubeLinks ?? true,
                                 onPainFlagTapped: {
                                     showPainFlagSheet = true
                                 }
@@ -499,7 +500,10 @@ struct ExerciseHeader: View {
     let exercise: Exercise
     let templateExercise: ExerciseTemplate
     let planData: PlannedExerciseResponse?
+    let showYouTubeLinks: Bool
     var onPainFlagTapped: (() -> Void)?
+    
+    @State private var showFormTips = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -508,6 +512,19 @@ struct ExerciseHeader: View {
                     .font(.title2.bold())
                 
                 Spacer()
+                
+                // Form tips info button
+                if exercise.hasFormGuidance || exercise.youtubeVideoURL != nil {
+                    Button {
+                        showFormTips = true
+                    } label: {
+                        Image(systemName: "info.circle")
+                            .font(.title3)
+                            .foregroundStyle(.blue)
+                    }
+                    .buttonStyle(.bordered)
+                    .buttonBorderShape(.circle)
+                }
                 
                 // Pain flag button
                 Button {
@@ -538,6 +555,10 @@ struct ExerciseHeader: View {
         .padding()
         .background(Color(.systemGray6))
         .clipShape(RoundedRectangle(cornerRadius: 12))
+        .sheet(isPresented: $showFormTips) {
+            FormTipsSheet(exercise: exercise, showYouTubeLinks: showYouTubeLinks)
+                .presentationDetents([.medium, .large])
+        }
     }
 }
 
@@ -830,6 +851,144 @@ struct ExerciseNavigation: View {
             }
         }
         .padding(.top)
+    }
+}
+
+// MARK: - Form Tips Sheet
+
+struct FormTipsSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    let exercise: Exercise
+    let showYouTubeLinks: Bool
+    
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    // Exercise name header
+                    HStack {
+                        Image(systemName: "figure.strengthtraining.traditional")
+                            .font(.title)
+                            .foregroundStyle(.blue)
+                        Text(exercise.name)
+                            .font(.title2.bold())
+                    }
+                    .padding(.bottom, 4)
+                    
+                    // Form Cues Section
+                    if !exercise.formCues.isEmpty {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Label("Key Form Cues", systemImage: "checkmark.circle.fill")
+                                .font(.headline)
+                                .foregroundStyle(.green)
+                            
+                            ForEach(exercise.formCues, id: \.self) { cue in
+                                HStack(alignment: .top, spacing: 10) {
+                                    Image(systemName: "arrow.right.circle.fill")
+                                        .foregroundStyle(.green.opacity(0.7))
+                                        .font(.subheadline)
+                                    Text(cue)
+                                        .font(.body)
+                                }
+                            }
+                        }
+                        .padding()
+                        .background(Color.green.opacity(0.1))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                    
+                    // Common Mistakes Section
+                    if !exercise.commonMistakes.isEmpty {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Label("Common Mistakes to Avoid", systemImage: "exclamationmark.triangle.fill")
+                                .font(.headline)
+                                .foregroundStyle(.orange)
+                            
+                            ForEach(exercise.commonMistakes, id: \.self) { mistake in
+                                HStack(alignment: .top, spacing: 10) {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .foregroundStyle(.orange.opacity(0.7))
+                                        .font(.subheadline)
+                                    Text(mistake)
+                                        .font(.body)
+                                }
+                            }
+                        }
+                        .padding()
+                        .background(Color.orange.opacity(0.1))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                    
+                    // YouTube Video Link Section
+                    if showYouTubeLinks, let videoURL = exercise.youtubeVideoURL, let url = URL(string: videoURL) {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Label("Video Tutorial", systemImage: "play.rectangle.fill")
+                                .font(.headline)
+                                .foregroundStyle(.red)
+                            
+                            Link(destination: url) {
+                                HStack {
+                                    Image(systemName: "play.circle.fill")
+                                        .font(.title2)
+                                    VStack(alignment: .leading) {
+                                        Text("Watch Form Guide")
+                                            .font(.subheadline.bold())
+                                        Text("AthleanX on YouTube")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                    Image(systemName: "arrow.up.right.square")
+                                        .font(.title3)
+                                }
+                                .padding()
+                                .background(Color.red.opacity(0.1))
+                                .clipShape(RoundedRectangle(cornerRadius: 10))
+                            }
+                            .foregroundStyle(.red)
+                        }
+                        .padding()
+                        .background(Color(.systemGray6))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                    
+                    // Instructions (if available)
+                    if let instructions = exercise.instructions, !instructions.isEmpty {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Label("Notes", systemImage: "note.text")
+                                .font(.headline)
+                                .foregroundStyle(.secondary)
+                            
+                            Text(instructions)
+                                .font(.body)
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding()
+                        .background(Color(.systemGray6))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                    
+                    // Empty state
+                    if exercise.formCues.isEmpty && exercise.commonMistakes.isEmpty && exercise.youtubeVideoURL == nil {
+                        ContentUnavailableView(
+                            "No Form Tips Available",
+                            systemImage: "info.circle",
+                            description: Text("Form guidance for this exercise hasn't been added yet.")
+                        )
+                    }
+                }
+                .padding()
+            }
+            .navigationTitle("Form Tips")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
+        }
     }
 }
 

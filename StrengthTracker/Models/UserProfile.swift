@@ -15,6 +15,7 @@ final class UserProfile {
     var claudeAPIKey: String?
     var openAIAPIKey: String?
     var appearanceMode: AppearanceMode = AppearanceMode.auto
+    var showYouTubeLinks: Bool = true
     var createdAt: Date
     var updatedAt: Date
 
@@ -33,6 +34,7 @@ final class UserProfile {
         claudeAPIKey: String? = nil,
         openAIAPIKey: String? = nil,
         appearanceMode: AppearanceMode = .auto,
+        showYouTubeLinks: Bool = true,
         createdAt: Date = Date(),
         updatedAt: Date = Date()
     ) {
@@ -48,6 +50,7 @@ final class UserProfile {
         self.claudeAPIKey = claudeAPIKey
         self.openAIAPIKey = openAIAPIKey
         self.appearanceMode = appearanceMode
+        self.showYouTubeLinks = showYouTubeLinks
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }

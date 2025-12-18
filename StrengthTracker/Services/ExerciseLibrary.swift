@@ -11,29 +11,53 @@ class ExerciseLibrary {
         // Check if exercises already exist
         let descriptor = FetchDescriptor<Exercise>()
         let existingExercises = (try? context.fetch(descriptor)) ?? []
-        let existingNames = Set(existingExercises.map { $0.name })
+        let existingByName = Dictionary(uniqueKeysWithValues: existingExercises.map { ($0.name, $0) })
 
         print("🏋️ ExerciseLibrary: Existing exercise count = \(existingExercises.count)")
 
         let allExercises = createAllExercises()
         
-        // Find exercises that don't exist yet
-        let newExercises = allExercises.filter { !existingNames.contains($0.name) }
+        var newCount = 0
+        var updatedCount = 0
         
-        if newExercises.isEmpty {
-            print("🏋️ ExerciseLibrary: All exercises already seeded, skipping")
+        for exercise in allExercises {
+            if let existing = existingByName[exercise.name] {
+                // Update existing exercise with new data (like YouTube URLs, form cues)
+                var didUpdate = false
+                
+                if existing.youtubeVideoURL == nil && exercise.youtubeVideoURL != nil {
+                    existing.youtubeVideoURL = exercise.youtubeVideoURL
+                    didUpdate = true
+                }
+                if existing.formCues.isEmpty && !exercise.formCues.isEmpty {
+                    existing.formCuesData = exercise.formCuesData
+                    didUpdate = true
+                }
+                if existing.commonMistakes.isEmpty && !exercise.commonMistakes.isEmpty {
+                    existing.commonMistakesData = exercise.commonMistakesData
+                    didUpdate = true
+                }
+                
+                if didUpdate {
+                    updatedCount += 1
+                }
+            } else {
+                // Insert new exercise
+                context.insert(exercise)
+                newCount += 1
+            }
+        }
+        
+        if newCount == 0 && updatedCount == 0 {
+            print("🏋️ ExerciseLibrary: All exercises up to date, skipping")
             return
         }
         
-        print("🏋️ ExerciseLibrary: Adding \(newExercises.count) new exercises")
-
-        for exercise in newExercises {
-            context.insert(exercise)
-        }
+        print("🏋️ ExerciseLibrary: Adding \(newCount) new, updating \(updatedCount) existing exercises")
 
         do {
             try context.save()
-            print("🏋️ ExerciseLibrary: Successfully saved \(newExercises.count) new exercises")
+            print("🏋️ ExerciseLibrary: Successfully saved changes")
 
             // Verify the save worked
             let verifyCount = (try? context.fetchCount(descriptor)) ?? 0
@@ -67,7 +91,8 @@ class ExerciseLibrary {
                 "Bouncing bar off chest",
                 "Lifting hips off bench",
                 "Not using leg drive"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=4Y2ZdHCOXok"
         ))
 
         exercises.append(Exercise(
@@ -87,7 +112,8 @@ class ExerciseLibrary {
             commonMistakes: [
                 "Setting incline too steep (turns into shoulder press)",
                 "Losing upper back tightness"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=SrqOu55lrYU"
         ))
 
         exercises.append(Exercise(
@@ -108,7 +134,8 @@ class ExerciseLibrary {
                 "Going too heavy and losing control",
                 "Clanking dumbbells at top",
                 "Not going deep enough"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=VmB1G1K7v94"
         ))
 
         exercises.append(Exercise(
@@ -127,7 +154,8 @@ class ExerciseLibrary {
             commonMistakes: [
                 "Incline too steep",
                 "Rushing the negative"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=8iPEnn-ltC8"
         ))
 
         exercises.append(Exercise(
@@ -147,7 +175,8 @@ class ExerciseLibrary {
             commonMistakes: [
                 "Bouncing arms off floor",
                 "Arching excessively"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=Aoyb7MlKaHc"
         ))
 
         exercises.append(Exercise(
@@ -169,7 +198,8 @@ class ExerciseLibrary {
                 "Flaring elbows out too wide",
                 "Not going low enough",
                 "Looking up (strain on neck)"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=IODxDxX7oi4"
         ))
 
         exercises.append(Exercise(
@@ -190,7 +220,8 @@ class ExerciseLibrary {
                 "Going too deep (shoulder strain)",
                 "Staying too upright (tricep dominant)",
                 "Swinging/kipping"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=vi1-BOcj3cQ"
         ))
 
         exercises.append(Exercise(
@@ -211,7 +242,8 @@ class ExerciseLibrary {
                 "Using too much weight",
                 "Bending elbows too much (turns into press)",
                 "Not controlling the stretch"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=Iwe6AmxVf7o"
         ))
 
         exercises.append(Exercise(
@@ -230,7 +262,8 @@ class ExerciseLibrary {
             commonMistakes: [
                 "Seat too high or low",
                 "Letting weight slam back"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=xUm0BiZCWlQ"
         ))
 
         // MARK: - Vertical Push (Shoulders)
@@ -253,7 +286,8 @@ class ExerciseLibrary {
                 "Excessive back lean",
                 "Pressing forward instead of straight up",
                 "Not bracing core properly"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=2yjwXTZQDDI"
         ))
 
         exercises.append(Exercise(
@@ -273,7 +307,8 @@ class ExerciseLibrary {
             commonMistakes: [
                 "Arching back excessively",
                 "Bringing dumbbells too far forward"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=qEwKCR5JCog"
         ))
 
         exercises.append(Exercise(
@@ -294,7 +329,8 @@ class ExerciseLibrary {
                 "Using momentum/swinging",
                 "Shrugging shoulders up",
                 "Going too heavy"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=3VcKaXpzqRo"
         ))
 
         exercises.append(Exercise(
@@ -315,7 +351,8 @@ class ExerciseLibrary {
                 "Pulling to chest instead of face",
                 "Not externally rotating",
                 "Using too much weight"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=rep-qVOkqgk"
         ))
 
         exercises.append(Exercise(
@@ -336,7 +373,8 @@ class ExerciseLibrary {
                 "Using too much weight",
                 "Not hinging enough",
                 "Rounding upper back"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=lPt0GqwaqEw"
         ))
 
         // MARK: - Horizontal Pull (Back - Rows)
@@ -358,7 +396,8 @@ class ExerciseLibrary {
                 "Standing too upright",
                 "Using momentum/jerking",
                 "Rounding lower back"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=FWJR5Ve8bnQ"
         ))
 
         exercises.append(Exercise(
@@ -379,7 +418,8 @@ class ExerciseLibrary {
                 "Rotating torso",
                 "Not getting full stretch",
                 "Pulling to chest instead of hip"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=pYcpY20QaE8"
         ))
 
         exercises.append(Exercise(
@@ -399,7 +439,8 @@ class ExerciseLibrary {
             commonMistakes: [
                 "Bench angle too steep",
                 "Not achieving full stretch"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=H75im9fAUMc"
         ))
 
         exercises.append(Exercise(
@@ -419,7 +460,8 @@ class ExerciseLibrary {
             commonMistakes: [
                 "Using too much body lean",
                 "Rounding back on stretch"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=GZbfZ033f74"
         ))
 
         exercises.append(Exercise(
@@ -439,7 +481,8 @@ class ExerciseLibrary {
             commonMistakes: [
                 "Sagging hips",
                 "Not pulling high enough"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=hXTc1mDnZCw"
         ))
 
         // MARK: - Vertical Pull (Back - Pulldowns/Pull-ups)
@@ -461,7 +504,8 @@ class ExerciseLibrary {
                 "Kipping/swinging",
                 "Not going to full hang",
                 "Only pulling chin to bar level"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=eGo4IYlbE5g"
         ))
 
         exercises.append(Exercise(
@@ -481,7 +525,8 @@ class ExerciseLibrary {
             commonMistakes: [
                 "Half reps",
                 "Excessive swinging"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=brhRXlOhsAM"
         ))
 
         exercises.append(Exercise(
@@ -502,7 +547,8 @@ class ExerciseLibrary {
                 "Leaning too far back",
                 "Pulling behind neck (injury risk)",
                 "Using momentum"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=CAwf7n6Luuc"
         ))
 
         exercises.append(Exercise(
@@ -521,7 +567,8 @@ class ExerciseLibrary {
             commonMistakes: [
                 "Relying too much on band assistance",
                 "Not progressing to less assistance"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=Y3ntNsIS2Q8"
         ))
 
         // MARK: - Squat Pattern (Quads)
@@ -546,7 +593,8 @@ class ExerciseLibrary {
                 "Heels rising off floor",
                 "Butt wink at bottom",
                 "Good morning-ing the weight up"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=bEv6CCg2BC8"
         ))
 
         exercises.append(Exercise(
@@ -567,7 +615,8 @@ class ExerciseLibrary {
                 "Elbows dropping",
                 "Leaning too far forward",
                 "Wrist pain (work on mobility)"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=m4ytaCJZpl0"
         ))
 
         exercises.append(Exercise(
@@ -587,7 +636,8 @@ class ExerciseLibrary {
             commonMistakes: [
                 "Leaning forward",
                 "Knees caving in"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=MeIiIdhvXT4"
         ))
 
         exercises.append(Exercise(
@@ -608,7 +658,8 @@ class ExerciseLibrary {
                 "Feet too high (more glute) or low (more quad)",
                 "Going too deep and rounding lower back",
                 "Locking knees aggressively"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=IZxyjW7MPJQ"
         ))
 
         exercises.append(Exercise(
@@ -628,7 +679,8 @@ class ExerciseLibrary {
             commonMistakes: [
                 "Knees caving",
                 "Heels rising"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=0tn5K9NlCfo"
         ))
 
         exercises.append(Exercise(
@@ -648,7 +700,8 @@ class ExerciseLibrary {
             commonMistakes: [
                 "Using momentum",
                 "Not achieving full contraction"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=YyvSfVjQeL0"
         ))
 
         // MARK: - Hinge Pattern (Hamstrings/Glutes)
@@ -673,7 +726,8 @@ class ExerciseLibrary {
                 "Bar drifting forward",
                 "Hips shooting up first",
                 "Hyperextending at lockout"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=op9kVnSso6Q"
         ))
 
         exercises.append(Exercise(
@@ -694,7 +748,8 @@ class ExerciseLibrary {
                 "Bending knees too much (becomes squat)",
                 "Rounding back",
                 "Going too low"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=JCXUYuzwNrM"
         ))
 
         exercises.append(Exercise(
@@ -714,7 +769,8 @@ class ExerciseLibrary {
             commonMistakes: [
                 "Dumbbells too far from body",
                 "Rounding back"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=hCDzSR6bW10"
         ))
 
         exercises.append(Exercise(
@@ -734,7 +790,8 @@ class ExerciseLibrary {
             commonMistakes: [
                 "Using momentum",
                 "Hips coming up"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=1Tq3QdYUuHs"
         ))
 
         // MARK: - Lunge Pattern
@@ -757,7 +814,8 @@ class ExerciseLibrary {
                 "Front foot too close to bench",
                 "Leaning too far forward",
                 "Knee caving inward"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=2C-uNgKwPLE"
         ))
 
         exercises.append(Exercise(
@@ -778,7 +836,8 @@ class ExerciseLibrary {
                 "Steps too short",
                 "Leaning forward",
                 "Losing balance"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=L8fvypPrzzs"
         ))
 
         // MARK: - Arms (Biceps)
@@ -800,7 +859,8 @@ class ExerciseLibrary {
                 "Swinging/using momentum",
                 "Elbows drifting forward",
                 "Incomplete range of motion"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=kwG2ipFRgfo"
         ))
 
         exercises.append(Exercise(
@@ -820,7 +880,8 @@ class ExerciseLibrary {
             commonMistakes: [
                 "Swinging dumbbells",
                 "Not supinating fully"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=ykJmrZ5v0Oo"
         ))
 
         exercises.append(Exercise(
@@ -838,7 +899,8 @@ class ExerciseLibrary {
             ],
             commonMistakes: [
                 "Using body momentum"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=NFzTWp2qpiE"
         ))
 
         exercises.append(Exercise(
@@ -856,7 +918,8 @@ class ExerciseLibrary {
             ],
             commonMistakes: [
                 "Using momentum"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=4POPGq4poXo"
         ))
 
         // MARK: - Arms (Triceps)
@@ -878,7 +941,8 @@ class ExerciseLibrary {
                 "Elbows flaring",
                 "Leaning into movement",
                 "Not achieving full lockout"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=2-LAMcpzODU"
         ))
 
         exercises.append(Exercise(
@@ -898,7 +962,8 @@ class ExerciseLibrary {
             commonMistakes: [
                 "Elbows flaring out",
                 "Not going low enough"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=YbX7Wd8jQ-Q"
         ))
 
         exercises.append(Exercise(
@@ -918,7 +983,8 @@ class ExerciseLibrary {
             commonMistakes: [
                 "Grip too narrow (wrist strain)",
                 "Flaring elbows"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=nEF0bv2FW94"
         ))
 
         exercises.append(Exercise(
@@ -938,7 +1004,8 @@ class ExerciseLibrary {
             commonMistakes: [
                 "Hips sagging",
                 "Elbows flaring wide"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=J0DnG1_S92I"
         ))
 
         // MARK: - Calves
@@ -960,7 +1027,8 @@ class ExerciseLibrary {
                 "Bouncing",
                 "Not achieving full range",
                 "Bending knees"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=-M4-G8p8fmc"
         ))
 
         exercises.append(Exercise(
@@ -979,7 +1047,8 @@ class ExerciseLibrary {
             ],
             commonMistakes: [
                 "Limited range of motion"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=JbyjNymZOt0"
         ))
 
         // MARK: - Core
@@ -1001,7 +1070,8 @@ class ExerciseLibrary {
                 "Hips too high or low",
                 "Holding breath",
                 "Looking up (neck strain)"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=pSHjTRCQxIw"
         ))
 
         exercises.append(Exercise(
@@ -1021,7 +1091,8 @@ class ExerciseLibrary {
             commonMistakes: [
                 "Using hip flexors",
                 "Pulling with arms"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=2fbujeH3F0E"
         ))
         
         // MARK: - Kettlebell Exercises
@@ -1045,7 +1116,8 @@ class ExerciseLibrary {
                 "Using arms to lift bell",
                 "Hyperextending back at top",
                 "Not engaging glutes at top"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=YSxHifyI6s8"
         ))
         
         exercises.append(Exercise(
@@ -1065,7 +1137,8 @@ class ExerciseLibrary {
             commonMistakes: [
                 "Letting elbows float away from body",
                 "Knees caving in"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=MeIiIdhvXT4"
         ))
         
         exercises.append(Exercise(
@@ -1088,7 +1161,8 @@ class ExerciseLibrary {
                 "Rushing through steps",
                 "Letting bell drift forward",
                 "Not keeping eyes on bell"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=0bWRPC6gdPg"
         ))
         
         exercises.append(Exercise(
@@ -1108,7 +1182,8 @@ class ExerciseLibrary {
             commonMistakes: [
                 "Bell banging wrist/forearm",
                 "Muscling it up instead of using hips"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=mKDIuUbH94Q"
         ))
         
         exercises.append(Exercise(
@@ -1128,7 +1203,8 @@ class ExerciseLibrary {
             commonMistakes: [
                 "Excessive back lean",
                 "Bell drifting forward"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=H2GHXHS_Wvw"
         ))
         
         exercises.append(Exercise(
@@ -1149,7 +1225,8 @@ class ExerciseLibrary {
                 "Bell flipping and banging wrist",
                 "Using too much arm",
                 "Not punching through at top"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=XS8RfLfioKk"
         ))
         
         exercises.append(Exercise(
@@ -1169,7 +1246,8 @@ class ExerciseLibrary {
             commonMistakes: [
                 "Rotating torso",
                 "Shrugging shoulder"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=2tnlrTnh7BE"
         ))
         
         exercises.append(Exercise(
@@ -1189,7 +1267,8 @@ class ExerciseLibrary {
             commonMistakes: [
                 "Hunching shoulders",
                 "Leaning to one side"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=Fkzk_RqlYig"
         ))
         
         // MARK: - Additional Carry Exercises
@@ -1211,7 +1290,8 @@ class ExerciseLibrary {
                 "Letting weights swing",
                 "Hunching shoulders up",
                 "Taking too long of strides"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=Fkzk_RqlYig"
         ))
         
         exercises.append(Exercise(
@@ -1232,7 +1312,8 @@ class ExerciseLibrary {
                 "Leaning away from weight",
                 "Letting hip drop on loaded side",
                 "Shrugging shoulder"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=qldiMxNdqfM"
         ))
         
         exercises.append(Exercise(
@@ -1253,7 +1334,8 @@ class ExerciseLibrary {
                 "Arching lower back",
                 "Letting arms drift forward",
                 "Walking too fast"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=xCRCLyQYXLo"
         ))
         
         exercises.append(Exercise(
@@ -1274,7 +1356,8 @@ class ExerciseLibrary {
                 "Letting elbows flare out",
                 "Rounding upper back",
                 "Holding breath"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=cN8JN0dS5uk"
         ))
         
         exercises.append(Exercise(
@@ -1295,7 +1378,8 @@ class ExerciseLibrary {
                 "Rounding back",
                 "Taking too large steps",
                 "Looking down"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=F-VIfHe4T3M"
         ))
         
         exercises.append(Exercise(
@@ -1316,7 +1400,8 @@ class ExerciseLibrary {
                 "Letting wrist bend back",
                 "Walking too fast",
                 "Not engaging shoulder stability"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=QwVZPGKePag"
         ))
         
         exercises.append(Exercise(
@@ -1338,7 +1423,8 @@ class ExerciseLibrary {
                 "Bending the overhead arm",
                 "Not keeping eyes on bell",
                 "Rushing the movement"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=sGspFB8kPD0"
         ))
         
         // MARK: - Additional Band Exercises
@@ -1359,7 +1445,8 @@ class ExerciseLibrary {
             commonMistakes: [
                 "Bending elbows",
                 "Shrugging shoulders"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=8lDC4Ri9zAQ"
         ))
         
         exercises.append(Exercise(
@@ -1378,7 +1465,8 @@ class ExerciseLibrary {
             ],
             commonMistakes: [
                 "Pulling to chest instead of face"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=0Po47vvj9g4"
         ))
         
         exercises.append(Exercise(
@@ -1397,7 +1485,8 @@ class ExerciseLibrary {
             ],
             commonMistakes: [
                 "Elbows moving"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=2QeojELM4K0"
         ))
         
         exercises.append(Exercise(
@@ -1416,7 +1505,8 @@ class ExerciseLibrary {
             ],
             commonMistakes: [
                 "Shrugging"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=Sl9RKnV9B9g"
         ))
         
         exercises.append(Exercise(
@@ -1434,7 +1524,8 @@ class ExerciseLibrary {
             ],
             commonMistakes: [
                 "Band slipping"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=ZZH5MNmC4OE"
         ))
         
         exercises.append(Exercise(
@@ -1453,7 +1544,8 @@ class ExerciseLibrary {
             ],
             commonMistakes: [
                 "Rounding back"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=7GGKTQVJYCY"
         ))
         
         exercises.append(Exercise(
@@ -1471,7 +1563,8 @@ class ExerciseLibrary {
             ],
             commonMistakes: [
                 "Band too loose"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=I8CU5pT9xaE"
         ))
         
         // MARK: - Cardio Exercises
@@ -1494,9 +1587,10 @@ class ExerciseLibrary {
                 "Holding handrails",
                 "Tense shoulders"
             ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=brFHyOtTwH4",
             durationSeconds: 1800
         ))
-        
+
         exercises.append(Exercise(
             name: "Treadmill Incline Walk",
             movementPattern: .cardio,
@@ -1515,9 +1609,10 @@ class ExerciseLibrary {
                 "Holding handrails (defeats purpose)",
                 "Leaning forward"
             ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=nnkyDp7AioM",
             durationSeconds: 1800
         ))
-        
+
         exercises.append(Exercise(
             name: "Stationary Bike",
             movementPattern: .cardio,
@@ -1535,9 +1630,10 @@ class ExerciseLibrary {
                 "Seat too low or high",
                 "Bouncing in saddle"
             ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=2oLc8mc87A8",
             durationSeconds: 1800
         ))
-        
+
         exercises.append(Exercise(
             name: "Rowing Machine",
             movementPattern: .cardio,
@@ -1557,9 +1653,10 @@ class ExerciseLibrary {
                 "Hunching over",
                 "Hyperextending back"
             ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=H0r3oCWYq1c",
             durationSeconds: 1200
         ))
-        
+
         exercises.append(Exercise(
             name: "Stair Climber",
             movementPattern: .cardio,
@@ -1578,9 +1675,10 @@ class ExerciseLibrary {
                 "Leaning heavily on rails",
                 "Taking tiny steps"
             ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=j9U9M5PRljs",
             durationSeconds: 1200
         ))
-        
+
         exercises.append(Exercise(
             name: "Elliptical",
             movementPattern: .cardio,
@@ -1598,9 +1696,10 @@ class ExerciseLibrary {
                 "Just going through motions",
                 "Leaning forward"
             ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=4Rxh8-wM_LA",
             durationSeconds: 1800
         ))
-        
+
         exercises.append(Exercise(
             name: "Battle Ropes",
             movementPattern: .cardio,
@@ -1619,6 +1718,7 @@ class ExerciseLibrary {
                 "Standing too upright",
                 "Small amplitude waves"
             ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=bi6-cwwf5sA",
             durationSeconds: 60
         ))
         
@@ -1641,6 +1741,7 @@ class ExerciseLibrary {
                 "Using arms too much",
                 "Landing flat-footed"
             ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=u3zgHI8QnqE",
             durationSeconds: 300
         ))
         
@@ -1662,9 +1763,10 @@ class ExerciseLibrary {
                 "Landing hard",
                 "Jumping down (Achilles stress)",
                 "Box too high for skill level"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=52r_Ul5k03g"
         ))
-        
+
         exercises.append(Exercise(
             name: "Burpees",
             movementPattern: .cardio,
@@ -1682,9 +1784,10 @@ class ExerciseLibrary {
             commonMistakes: [
                 "Skipping the chest-to-floor",
                 "Landing hard on jump"
-            ]
+            ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=auBLPXO8Fww"
         ))
-        
+
         // MARK: - Pre-Workout Mobility Routines
         exercises.append(Exercise(
             name: "Cat-Cow Stretch",
@@ -1704,11 +1807,12 @@ class ExerciseLibrary {
                 "Rushing through",
                 "Not coordinating with breath"
             ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=kqnua4rHVVA",
             isMobilityRoutine: true,
             routineType: "pre-workout",
             durationSeconds: 60
         ))
-        
+
         exercises.append(Exercise(
             name: "World's Greatest Stretch",
             movementPattern: .mobility,
@@ -1727,11 +1831,12 @@ class ExerciseLibrary {
                 "Not opening up rotation enough",
                 "Rushing"
             ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=JYKakSAQwNM",
             isMobilityRoutine: true,
             routineType: "pre-workout",
             durationSeconds: 90
         ))
-        
+
         exercises.append(Exercise(
             name: "Hip Circles",
             movementPattern: .mobility,
@@ -1750,11 +1855,12 @@ class ExerciseLibrary {
                 "Circles too small",
                 "Losing balance"
             ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=3eV7IcfX1QA",
             isMobilityRoutine: true,
             routineType: "pre-workout",
             durationSeconds: 60
         ))
-        
+
         exercises.append(Exercise(
             name: "Arm Circles",
             movementPattern: .mobility,
@@ -1772,11 +1878,12 @@ class ExerciseLibrary {
             commonMistakes: [
                 "Shrugging shoulders"
             ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=140RTNMciH8",
             isMobilityRoutine: true,
             routineType: "pre-workout",
             durationSeconds: 45
         ))
-        
+
         exercises.append(Exercise(
             name: "Leg Swings",
             movementPattern: .mobility,
@@ -1794,11 +1901,12 @@ class ExerciseLibrary {
             commonMistakes: [
                 "Swinging too aggressively at start"
             ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=lOCse3urMFA",
             isMobilityRoutine: true,
             routineType: "pre-workout",
             durationSeconds: 60
         ))
-        
+
         exercises.append(Exercise(
             name: "Thoracic Rotation",
             movementPattern: .mobility,
@@ -1816,6 +1924,7 @@ class ExerciseLibrary {
             commonMistakes: [
                 "Moving hips instead of thoracic spine"
             ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=aJjFjb8R_W0",
             isMobilityRoutine: true,
             routineType: "pre-workout",
             durationSeconds: 60
@@ -1839,6 +1948,7 @@ class ExerciseLibrary {
             commonMistakes: [
                 "Rounding back when standing"
             ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=NwqVPt0xhYQ",
             isMobilityRoutine: true,
             routineType: "pre-workout",
             durationSeconds: 60
@@ -1861,6 +1971,7 @@ class ExerciseLibrary {
             commonMistakes: [
                 "Bending knees too much"
             ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=ZY2ji_Ho0dA",
             isMobilityRoutine: true,
             routineType: "pre-workout",
             durationSeconds: 60
@@ -1885,6 +1996,7 @@ class ExerciseLibrary {
                 "Forcing depth",
                 "Not keeping hips square"
             ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=8x0TDdQrFEg",
             isMobilityRoutine: true,
             routineType: "post-workout",
             durationSeconds: 90
@@ -1908,6 +2020,7 @@ class ExerciseLibrary {
                 "Excessive forward lean",
                 "Not squeezing glute"
             ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=6CKXKDkEDSc",
             isMobilityRoutine: true,
             routineType: "post-workout",
             durationSeconds: 90
@@ -1930,6 +2043,7 @@ class ExerciseLibrary {
             commonMistakes: [
                 "Lifting back hip off floor"
             ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=fQQvMhLRMBQ",
             isMobilityRoutine: true,
             routineType: "post-workout",
             durationSeconds: 90
@@ -1952,6 +2066,7 @@ class ExerciseLibrary {
             commonMistakes: [
                 "Rounding back instead of hinging"
             ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=_NxAaYiMwOU",
             isMobilityRoutine: true,
             routineType: "post-workout",
             durationSeconds: 60
@@ -1975,6 +2090,7 @@ class ExerciseLibrary {
                 "Elbow too high or low",
                 "Rotating torso"
             ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=SLLi7A1pOt4",
             isMobilityRoutine: true,
             routineType: "post-workout",
             durationSeconds: 60
@@ -1997,6 +2113,7 @@ class ExerciseLibrary {
             commonMistakes: [
                 "Not relaxing fully"
             ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=2MJGg-dUKh0",
             isMobilityRoutine: true,
             routineType: "post-workout",
             durationSeconds: 60
@@ -2020,6 +2137,7 @@ class ExerciseLibrary {
                 "Rolling too fast",
                 "Rolling over knee"
             ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=8kVYBsADMa4",
             isMobilityRoutine: true,
             routineType: "post-workout",
             durationSeconds: 120
@@ -2042,6 +2160,7 @@ class ExerciseLibrary {
             commonMistakes: [
                 "Rolling too fast"
             ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=QBXkKWmKcA0",
             isMobilityRoutine: true,
             routineType: "post-workout",
             durationSeconds: 90
@@ -2065,6 +2184,7 @@ class ExerciseLibrary {
                 "Rolling too low onto lower back",
                 "Neck straining"
             ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=dZrBHNvxqBs",
             isMobilityRoutine: true,
             routineType: "post-workout",
             durationSeconds: 120
@@ -2087,6 +2207,7 @@ class ExerciseLibrary {
             commonMistakes: [
                 "Shoulder lifting off floor"
             ],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=VNWmAwBLVkM",
             isMobilityRoutine: true,
             routineType: "post-workout",
             durationSeconds: 60

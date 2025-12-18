@@ -81,6 +81,11 @@ struct ProfileView: View {
                             get: { profile.defaultRestTime },
                             set: { profile.defaultRestTime = $0 }
                         ), in: 60...300, step: 15)
+                        
+                        Toggle("Show YouTube Form Videos", isOn: Binding(
+                            get: { profile.showYouTubeLinks },
+                            set: { profile.showYouTubeLinks = $0 }
+                        ))
                     }
 
                     // Equipment

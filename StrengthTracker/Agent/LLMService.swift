@@ -210,6 +210,7 @@ struct CustomExercisePlan: Codable {
     let primaryMuscles: [String]? // e.g., ["chest", "triceps"]
     let isCompound: Bool?
     let equipmentRequired: [String]? // e.g., ["barbell", "bench"]
+    let youtubeVideoURL: String? // Form tutorial video URL (prefer AthleanX)
 }
 
 // MARK: - LLM Service Manager
@@ -494,6 +495,7 @@ enum CoachPrompts {
     6. For isolation exercises: 2-3 working sets
     7. Use the user's exercise history to suggest appropriate weights
     8. Order exercises: compounds first, then isolations
+    9. Include YouTube form tutorial URLs - prefer AthleanX videos when available
 
     Respond with valid JSON:
     {
@@ -509,7 +511,8 @@ enum CoachPrompts {
           "movementPattern": "string (one of: squat, hinge, lunge, horizontalPush, horizontalPull, verticalPush, verticalPull, carry, isolation, core)",
           "primaryMuscles": ["string (e.g., 'chest', 'back', 'quads', 'hamstrings', 'shoulders', 'biceps', 'triceps', 'glutes', 'calves', 'abs', 'forearms', 'traps', 'lats')"],
           "isCompound": boolean,
-          "equipmentRequired": ["string (e.g., 'barbell', 'dumbbell', 'cable', 'machine', 'bodyweight', 'bench', 'rack')"]
+          "equipmentRequired": ["string (e.g., 'barbell', 'dumbbell', 'cable', 'machine', 'bodyweight', 'bench', 'rack')"],
+          "youtubeVideoURL": "string or null (YouTube form tutorial URL, prefer AthleanX channel)"
         }
       ],
       "reasoning": "string (brief explanation of exercise selection)",
