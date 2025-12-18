@@ -349,26 +349,48 @@ enum CoachPrompts {
     - Equipment profile (gym/home, available gear)
     - Current readiness (energy, soreness, time)
     - Goals (strength/hypertrophy/both)
+    - Pain flags (body parts with pain, severity, associated exercises)
 
     Rules:
     1. Prefer stable, predictable plans - avoid random variation
     2. Make the smallest effective change to drive progress
     3. Never exceed user's available equipment
-    4. Respect readiness flags:
+    4. CRITICAL - Pain flags are the highest priority:
+       - If an exercise targets a body part with an active pain flag, ALWAYS substitute it
+       - IMPORTANT: Choose substitutes from COMPLETELY DIFFERENT body parts
+       - Upper body pain (chest/shoulders/back/arms) → substitute with LEG exercises
+       - Leg pain → substitute with UPPER BODY exercises (back/chest preferred)
+       - Core pain → substitute with limb exercises (legs/arms)
+       - Severity matters: Mild = consider lighter load, Moderate/Severe = MUST substitute
+       - Prefer compound movements for substitutes when possible
+       - Include clear reasoning in the "substitutions" array explaining the pain-based swap
+       - Never ignore pain flags - user safety is paramount
+    5. Respect readiness flags:
        - Low energy or high soreness: cap RPE at 7.5, reduce backoffs by 1-2 sets
        - High energy + no soreness: allow 1 extra backoff or small load bump
-    5. For weight progressions:
+    6. For weight progressions:
        - Barbell compounds: +2.5kg when rep target hit at/below RPE cap
        - Dumbbells: +2kg (or next available increment)
        - If reps not hit, keep weight and aim for +1 rep
-    6. Always output valid JSON matching the provided schema exactly
-    7. Never add exercises not in the template unless absolutely necessary
+    7. Always output valid JSON matching the provided schema exactly
+    8. Never add exercises not in the template unless absolutely necessary
 
     Output JSON only. No markdown code fences, no explanations outside the JSON structure.
     """
 
     static let planPrompt = """
     Generate today's workout plan based on the context provided.
+
+    CRITICAL - Check for pain flags first:
+    1. Review all painFlags in the context
+    2. For each exercise in the template, check if it targets the affected body part
+    3. If pain flag severity is Moderate or Severe, MUST substitute the exercise
+    4. If severity is Mild, consider reducing load by 10-15% or substituting
+    5. SUBSTITUTION STRATEGY - Use exercises from different body parts:
+       - Upper body pain → substitute with leg exercises (squats, lunges, leg press)
+       - Leg pain → substitute with upper body (rows, pull-ups, lat pulldown)
+       - Never substitute shoulder pain with another shoulder exercise!
+    6. Document ALL substitutions in the "substitutions" array with clear reasoning
 
     For each exercise:
     1. Calculate warmup sets (typically 3-4 sets working up to top set weight)

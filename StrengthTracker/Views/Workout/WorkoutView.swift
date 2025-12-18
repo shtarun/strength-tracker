@@ -19,6 +19,11 @@ struct WorkoutView: View {
 
     @State private var exerciseSets: [UUID: [WorkoutSet]] = [:]
 
+    // Pain flag handling
+    @State private var showSubstitutionAlert = false
+    @State private var painFlaggedExercise: (flag: PainFlag, exercise: Exercise)?
+    @State private var suggestedSubstitute: String?
+
     private var profile: UserProfile? { userProfiles.first }
     private var unitSystem: UnitSystem { profile?.unitSystem ?? .metric }
 
@@ -132,8 +137,27 @@ struct WorkoutView: View {
             }
             .sheet(isPresented: $showPainFlagSheet) {
                 if let exercise = currentExercise {
-                    PainFlagSheet(exercise: exercise)
-                        .presentationDetents([.medium])
+                    PainFlagSheet(exercise: exercise) { painFlag in
+                        handlePainFlagged(painFlag: painFlag, exercise: exercise)
+                    }
+                    .presentationDetents([.medium])
+                }
+            }
+            .alert("Exercise Substitution", isPresented: $showSubstitutionAlert) {
+                Button("Skip Exercise", role: .destructive) {
+                    skipCurrentExercise()
+                }
+                if let substitute = suggestedSubstitute {
+                    Button("Switch to \(substitute)") {
+                        substituteCurrentExercise(with: substitute)
+                    }
+                }
+                Button("Continue Anyway", role: .cancel) {
+                    // User chooses to continue with the painful exercise
+                }
+            } message: {
+                if let (flag, exercise) = painFlaggedExercise {
+                    Text("You flagged \(flag.severity.rawValue) pain in your \(flag.bodyPart.rawValue) during \(exercise.name). Would you like to substitute this exercise?")
                 }
             }
             .onAppear {
@@ -343,6 +367,90 @@ struct WorkoutView: View {
         try? modelContext.save()
 
         dismiss()
+    }
+
+    // MARK: - Pain Flag Handling
+
+    private func handlePainFlagged(painFlag: PainFlag, exercise: Exercise) {
+        painFlaggedExercise = (painFlag, exercise)
+
+        // Find a substitute using the offline substitution engine
+        Task {
+            let painContext = PainFlagContext(
+                exerciseName: exercise.name,
+                bodyPart: painFlag.bodyPart.rawValue,
+                severity: painFlag.severity.rawValue
+            )
+
+            let offlineEngine = OfflineProgressionEngine()
+            if let (substitute, _) = await offlineEngine.checkIfNeedsSubstitution(
+                exerciseName: exercise.name,
+                painFlags: [painContext]
+            ) {
+                await MainActor.run {
+                    suggestedSubstitute = substitute
+                    showSubstitutionAlert = true
+                }
+            } else {
+                // No substitute found, just show skip option
+                await MainActor.run {
+                    suggestedSubstitute = nil
+                    showSubstitutionAlert = true
+                }
+            }
+        }
+    }
+
+    private func skipCurrentExercise() {
+        // Move to next exercise
+        if currentExerciseIndex < totalExercises - 1 {
+            currentExerciseIndex += 1
+        } else {
+            // Last exercise, show summary
+            showSummary = true
+        }
+    }
+
+    private func substituteCurrentExercise(with substituteName: String) {
+        // Find or create the substitute exercise
+        guard let currentTemplateEx = currentTemplateExercise else { return }
+
+        // Query all exercises to find the substitute
+        let descriptor = FetchDescriptor<Exercise>(
+            predicate: #Predicate { $0.name == substituteName }
+        )
+
+        do {
+            let exercises = try modelContext.fetch(descriptor)
+
+            if let substituteExercise = exercises.first {
+                // Create sets for the substitute exercise using the same prescription
+                var sets: [WorkoutSet] = []
+                let prescription = currentTemplateEx.prescription
+
+                // Create working sets for the substitute
+                for i in 0..<prescription.workingSets {
+                    let set = WorkoutSet(
+                        exercise: substituteExercise,
+                        setType: .working,
+                        weight: 0, // User will input weight
+                        targetReps: prescription.topSetRepsMin,
+                        targetRPE: prescription.topSetRPECap,
+                        orderIndex: i
+                    )
+                    sets.append(set)
+                }
+
+                exerciseSets[substituteExercise.id] = sets
+
+                // Update the current template exercise to point to the substitute
+                // Note: This is a temporary in-memory substitution
+                // The actual template remains unchanged
+                currentTemplateEx.exercise = substituteExercise
+            }
+        } catch {
+            print("Error fetching substitute exercise: \(error)")
+        }
     }
 }
 

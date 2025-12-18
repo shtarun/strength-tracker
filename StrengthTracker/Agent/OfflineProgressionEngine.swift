@@ -7,6 +7,7 @@ actor OfflineProgressionEngine {
         var exercises: [PlannedExerciseResponse] = []
         var adjustments: [String] = []
         var reasoning: [String] = []
+        var substitutions: [SubstitutionResponse] = []
 
         let readiness = Readiness(
             energy: EnergyLevel(rawValue: context.readiness.energy) ?? .ok,
@@ -19,6 +20,12 @@ actor OfflineProgressionEngine {
             adjustments.append("Reduced intensity due to \(context.readiness.energy) energy / \(context.readiness.soreness) soreness")
         }
 
+        // Build pain awareness context
+        let painBodyParts = Set(context.painFlags.map { $0.bodyPart })
+        if !painBodyParts.isEmpty {
+            adjustments.append("Pain-aware plan: avoiding exercises targeting \(painBodyParts.joined(separator: ", "))")
+        }
+
         for templateExercise in context.currentTemplate.exercises {
             // Skip optional exercises if time constrained
             if templateExercise.isOptional && context.timeAvailable <= 45 {
@@ -26,20 +33,37 @@ actor OfflineProgressionEngine {
                 continue
             }
 
-            // Find history for this exercise
-            let history = context.recentHistory.first { $0.exerciseName == templateExercise.name }
+            // Check if this exercise needs substitution due to pain
+            let exerciseNeedsSubstitution = checkIfNeedsSubstitution(
+                exerciseName: templateExercise.name,
+                painFlags: context.painFlags
+            )
+
+            var exerciseToUse = templateExercise.name
+            var historyToUse = context.recentHistory.first { $0.exerciseName == templateExercise.name }
+
+            if let (substitute, reason) = exerciseNeedsSubstitution {
+                substitutions.append(SubstitutionResponse(
+                    from: templateExercise.name,
+                    to: substitute,
+                    reason: reason
+                ))
+                exerciseToUse = substitute
+                historyToUse = context.recentHistory.first { $0.exerciseName == substitute }
+                reasoning.append("Substituted \(templateExercise.name) → \(substitute) due to pain")
+            }
 
             let plannedExercise = planExercise(
-                name: templateExercise.name,
+                name: exerciseToUse,
                 prescription: templateExercise.prescription,
-                history: history,
+                history: historyToUse,
                 readiness: readiness
             )
 
             exercises.append(plannedExercise)
 
-            if let lastSession = history?.lastSessions.first {
-                reasoning.append("\(templateExercise.name): Last \(lastSession.topSetWeight)kg x \(lastSession.topSetReps)")
+            if let lastSession = historyToUse?.lastSessions.first {
+                reasoning.append("\(exerciseToUse): Last \(lastSession.topSetWeight)kg x \(lastSession.topSetReps)")
             }
         }
 
@@ -47,7 +71,7 @@ actor OfflineProgressionEngine {
 
         return TodayPlanResponse(
             exercises: exercises,
-            substitutions: [], // Handled separately
+            substitutions: substitutions,
             adjustments: adjustments,
             reasoning: reasoning,
             estimatedDuration: estimatedDuration
@@ -324,6 +348,171 @@ actor OfflineProgressionEngine {
 
     private func roundToNearest(_ value: Double, increment: Double) -> Double {
         return (value / increment).rounded() * increment
+    }
+
+    /// Check if an exercise needs substitution based on pain flags
+    /// Returns (substitute name, reason) if substitution needed, nil otherwise
+    func checkIfNeedsSubstitution(
+        exerciseName: String,
+        painFlags: [PainFlagContext]
+    ) -> (substitute: String, reason: String)? {
+        // Map of exercises to their primary body parts
+        let exerciseBodyParts: [String: [String]] = [
+            // Horizontal Push
+            "Bench Press": ["chest", "shoulders", "arms"],
+            "Incline Bench Press": ["chest", "shoulders", "arms"],
+            "Dumbbell Bench Press": ["chest", "shoulders", "arms"],
+            "Floor Press": ["chest", "arms"],
+            "Push-ups": ["chest", "shoulders", "arms"],
+            "Dips": ["chest", "shoulders", "arms"],
+            "Machine Chest Press": ["chest", "shoulders", "arms"],
+
+            // Vertical Push
+            "Overhead Press": ["shoulders", "arms"],
+            "Dumbbell Shoulder Press": ["shoulders", "arms"],
+
+            // Vertical Pull
+            "Pull-ups": ["back", "arms"],
+            "Chin-ups": ["back", "arms"],
+            "Lat Pulldown": ["back", "arms"],
+            "Banded Pull-ups": ["back", "arms"],
+
+            // Horizontal Pull
+            "Barbell Row": ["back", "arms"],
+            "Dumbbell Row": ["back", "arms"],
+            "Chest Supported Row": ["back", "arms"],
+            "Cable Row": ["back", "arms"],
+            "Inverted Row": ["back", "arms"],
+
+            // Squat Pattern
+            "Barbell Squat": ["legs"],
+            "Front Squat": ["legs", "core"],
+            "Goblet Squat": ["legs"],
+            "Leg Press": ["legs"],
+            "Hack Squat": ["legs"],
+
+            // Hinge Pattern
+            "Deadlift": ["back", "legs"],
+            "Romanian Deadlift": ["back", "legs"],
+            "Dumbbell Romanian Deadlift": ["back", "legs"],
+
+            // Lunge Pattern
+            "Bulgarian Split Squat": ["legs"],
+            "Walking Lunges": ["legs"],
+
+            // Arms
+            "Barbell Curl": ["arms"],
+            "Dumbbell Curl": ["arms"],
+            "Cable Curl": ["arms"],
+            "Band Curl": ["arms"],
+            "Tricep Pushdown": ["arms"],
+            "Overhead Tricep Extension": ["arms"],
+            "Close Grip Bench Press": ["chest", "arms"],
+            "Diamond Push-ups": ["chest", "arms"],
+
+            // Shoulders
+            "Lateral Raise": ["shoulders"],
+            "Face Pull": ["shoulders", "back"],
+            "Rear Delt Fly": ["shoulders", "back"],
+
+            // Legs Isolation
+            "Leg Extension": ["legs"],
+            "Leg Curl": ["legs"],
+
+            // Core
+            "Cable Crunch": ["core"],
+            "Plank": ["core"]
+        ]
+
+        // Get body parts this exercise targets
+        guard let targetedBodyParts = exerciseBodyParts[exerciseName] else {
+            return nil // Unknown exercise, no substitution
+        }
+
+        // Check if any pain flags affect this exercise
+        for painFlag in painFlags {
+            let painBodyPart = painFlag.bodyPart.lowercased()
+
+            if targetedBodyParts.contains(painBodyPart) {
+                // Need substitution - find a completely different body part
+                // Strategy: Map painful body part to safe alternative body parts
+                let painFreeAlternatives = findPainFreeAlternatives(
+                    painBodyPart: painBodyPart,
+                    allExercises: exerciseBodyParts
+                )
+
+                if let substitute = painFreeAlternatives.first {
+                    let severity = painFlag.severity
+                    let reason = "Pain flag: \(severity) \(painBodyPart) pain"
+                    return (substitute, reason)
+                }
+
+                // No good alternative found
+                return nil
+            }
+        }
+
+        return nil // No substitution needed
+    }
+
+    /// Find exercises that don't target the painful body part
+    /// Prioritizes exercises that target opposite/unrelated muscle groups
+    private func findPainFreeAlternatives(
+        painBodyPart: String,
+        allExercises: [String: [String]]
+    ) -> [String] {
+        // Define which body parts to prefer based on what hurts
+        // Strategy: If upper body hurts → suggest lower body, and vice versa
+        let preferredBodyParts: [String]
+
+        switch painBodyPart {
+        case "chest", "shoulders", "arms", "back":
+            // Upper body pain → prefer leg exercises
+            preferredBodyParts = ["legs", "core"]
+        case "legs":
+            // Leg pain → prefer upper body
+            preferredBodyParts = ["back", "chest"]
+        case "core":
+            // Core pain → prefer limb exercises
+            preferredBodyParts = ["legs", "arms"]
+        default:
+            preferredBodyParts = []
+        }
+
+        var candidates: [String] = []
+
+        // First pass: Find exercises targeting preferred body parts
+        for (exerciseName, bodyParts) in allExercises {
+            // Skip if this exercise targets the painful body part
+            if bodyParts.contains(painBodyPart) {
+                continue
+            }
+
+            // Prioritize exercises targeting preferred body parts
+            if bodyParts.contains(where: { preferredBodyParts.contains($0) }) {
+                candidates.append(exerciseName)
+            }
+        }
+
+        // If no preferred alternatives, accept any exercise that doesn't target pain
+        if candidates.isEmpty {
+            for (exerciseName, bodyParts) in allExercises {
+                if !bodyParts.contains(painBodyPart) {
+                    candidates.append(exerciseName)
+                }
+            }
+        }
+
+        // Prioritize compound movements
+        let compoundMovements = [
+            "Barbell Squat", "Deadlift", "Romanian Deadlift",
+            "Barbell Row", "Pull-ups", "Lat Pulldown",
+            "Leg Press", "Bulgarian Split Squat"
+        ]
+
+        let compoundCandidates = candidates.filter { compoundMovements.contains($0) }
+
+        return compoundCandidates.isEmpty ? candidates : compoundCandidates
     }
 
     // MARK: - Weekly Review

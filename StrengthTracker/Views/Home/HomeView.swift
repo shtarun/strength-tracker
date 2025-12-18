@@ -7,6 +7,7 @@ struct HomeView: View {
     @Query(sort: \WorkoutTemplate.dayNumber) private var templates: [WorkoutTemplate]
     @Query(sort: \WorkoutSession.date, order: .reverse) private var recentSessions: [WorkoutSession]
     @Query private var exercises: [Exercise]
+    @Query private var painFlags: [PainFlag]
 
     @State private var showReadinessCheck = false
     @State private var showActiveWorkout = false
@@ -312,6 +313,17 @@ struct HomeView: View {
         let equipment = profile?.equipmentProfile
         let equipmentList = equipment?.availableEquipment.map { $0.rawValue } ?? []
 
+        // Fetch active (recent and unresolved) pain flags
+        let activePainFlags = painFlags
+            .filter { $0.isRecent }
+            .map { painFlag -> PainFlagContext in
+                PainFlagContext(
+                    exerciseName: painFlag.exercise?.name,
+                    bodyPart: painFlag.bodyPart.rawValue,
+                    severity: painFlag.severity.rawValue
+                )
+            }
+
         return CoachContext(
             userGoal: profile?.goal.rawValue ?? "Both",
             currentTemplate: TemplateContext(
@@ -340,7 +352,7 @@ struct HomeView: View {
             timeAvailable: readiness.timeAvailable,
             recentHistory: exerciseHistory,
             equipmentAvailable: equipmentList,
-            painFlags: [] // TODO: Fetch active pain flags
+            painFlags: activePainFlags
         )
     }
 
