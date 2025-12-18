@@ -4,23 +4,65 @@ import SwiftData
 struct TemplatesView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \WorkoutTemplate.dayNumber) private var templates: [WorkoutTemplate]
+    @Query(sort: \WorkoutPlan.updatedAt, order: .reverse) private var plans: [WorkoutPlan]
 
     @State private var selectedTemplate: WorkoutTemplate?
     @State private var showEditor = false
+    @State private var showPlansView = false
+    
+    private var activePlan: WorkoutPlan? {
+        plans.first { $0.isActive }
+    }
 
     var body: some View {
         NavigationStack {
             List {
-                ForEach(templates) { template in
-                    TemplateRow(template: template)
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            selectedTemplate = template
-                            showEditor = true
-                        }
+                // Active plan section
+                if let plan = activePlan {
+                    Section {
+                        ActivePlanBanner(plan: plan)
+                            .onTapGesture {
+                                showPlansView = true
+                            }
+                    }
                 }
-                .onDelete(perform: deleteTemplates)
-                .onMove(perform: moveTemplates)
+                
+                // Plans section
+                Section {
+                    NavigationLink {
+                        PlansListView()
+                    } label: {
+                        HStack {
+                            Image(systemName: "calendar.badge.clock")
+                                .foregroundStyle(.blue)
+                            VStack(alignment: .leading) {
+                                Text("Workout Plans")
+                                    .font(.headline)
+                                Text("\(plans.count) plans")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                } header: {
+                    Label("Programs", systemImage: "list.bullet.rectangle")
+                }
+                
+                // Templates section
+                Section {
+                    ForEach(templates) { template in
+                        TemplateRow(template: template)
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                selectedTemplate = template
+                                showEditor = true
+                            }
+                    }
+                    .onDelete(perform: deleteTemplates)
+                    .onMove(perform: moveTemplates)
+                } header: {
+                    Label("Workout Templates", systemImage: "doc.text")
+                }
             }
             .navigationTitle("Templates")
             .toolbar {
@@ -75,6 +117,56 @@ struct TemplatesView: View {
         }
 
         try? modelContext.save()
+    }
+}
+
+// MARK: - Active Plan Banner
+
+struct ActivePlanBanner: View {
+    let plan: WorkoutPlan
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: "bolt.fill")
+                    .foregroundStyle(.yellow)
+                Text("Active Plan")
+                    .font(.caption.bold())
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            }
+            
+            Text(plan.name)
+                .font(.headline)
+            
+            if let week = plan.currentPlanWeek {
+                HStack {
+                    Image(systemName: week.weekType.icon)
+                        .foregroundStyle(week.weekType.color)
+                    Text("Week \(plan.currentWeek) of \(plan.durationWeeks)")
+                    Text("•")
+                        .foregroundStyle(.secondary)
+                    Text(week.weekType.rawValue)
+                        .foregroundStyle(week.weekType.color)
+                }
+                .font(.subheadline)
+            }
+            
+            ProgressView(value: plan.progressPercentage)
+                .tint(.blue)
+            
+            HStack {
+                Text("\(Int(plan.progressPercentage * 100))% complete")
+                Spacer()
+                Text("\(plan.completedWorkoutsThisWeek)/\(plan.workoutsPerWeek) this week")
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        }
+        .padding(.vertical, 4)
     }
 }
 

@@ -255,7 +255,8 @@ final class CustomWorkoutTests: XCTestCase {
             backoffSets: plan.sets - 1, // First set is "top" set
             backoffRepsMin: minReps,
             backoffRepsMax: maxReps,
-            backoffLoadDropPercent: 0 // Same weight for all sets
+            backoffLoadDropPercent: 0, // Same weight for all sets
+            workingSets: plan.sets
         )
         
         XCTAssertEqual(prescription.topSetRepsMin, 5)
@@ -354,9 +355,10 @@ final class CustomWorkoutTests: XCTestCase {
             workingSets: plan.sets
         )
         
-        XCTAssertEqual(prescription.progressionType, .straightSets, "Saved templates should use straight sets")
+        XCTAssertEqual(prescription.progressionType, ProgressionType.straightSets, "Saved templates should use straight sets")
         XCTAssertEqual(prescription.workingSets, 3)
         XCTAssertEqual(prescription.topSetRepsMin, 12)
         XCTAssertEqual(prescription.topSetRepsMax, 15)
     }
 }
+

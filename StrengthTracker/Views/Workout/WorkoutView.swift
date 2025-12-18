@@ -4,10 +4,12 @@ import SwiftData
 struct WorkoutView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.scenePhase) private var scenePhase
     @Query private var userProfiles: [UserProfile]
 
     let template: WorkoutTemplate
     let plan: TodayPlanResponse?
+    var resumingFrom: PausedWorkout?
 
     @State private var currentExerciseIndex = 0
     @State private var workoutStartTime = Date()
@@ -15,6 +17,7 @@ struct WorkoutView: View {
     @State private var restTimeRemaining: Int = 180
     @State private var showSummary = false
     @State private var showPainFlagSheet = false
+    @State private var showPauseConfirmation = false
     @State private var session: WorkoutSession?
 
     @State private var exerciseSets: [UUID: [WorkoutSet]] = [:]
@@ -112,9 +115,34 @@ struct WorkoutView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
+                    Button {
+                        showPauseConfirmation = true
+                    } label: {
+                        Image(systemName: "pause.circle")
+                    }
+                }
+                ToolbarItem(placement: .primaryAction) {
                     Button("End") {
                         showSummary = true
                     }
+                }
+            }
+            .confirmationDialog("Pause Workout?", isPresented: $showPauseConfirmation, titleVisibility: .visible) {
+                Button("Pause") {
+                    pauseWorkout()
+                }
+                Button("Discard & Exit", role: .destructive) {
+                    clearPausedWorkout()
+                    dismiss()
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Your progress will be saved automatically. You can resume from the Home screen.")
+            }
+            .onChange(of: scenePhase) { oldPhase, newPhase in
+                if newPhase == .background || newPhase == .inactive {
+                    // Auto-save when app goes to background
+                    savePausedState()
                 }
             }
             .sheet(isPresented: $showRestTimer) {
@@ -162,9 +190,34 @@ struct WorkoutView: View {
                 }
             }
             .onAppear {
-                initializeWorkout()
+                if let paused = resumingFrom {
+                    resumeWorkout(from: paused)
+                } else {
+                    initializeWorkout()
+                }
             }
         }
+    }
+
+    private func resumeWorkout(from paused: PausedWorkout) {
+        workoutStartTime = paused.startedAt
+        currentExerciseIndex = paused.currentExerciseIndex
+
+        // Restore sets from snapshots
+        let snapshots = paused.exerciseSets
+        for (exerciseId, setSnapshots) in snapshots {
+            // Find the exercise
+            let exercise = template.sortedExercises
+                .compactMap { $0.exercise }
+                .first { $0.id == exerciseId }
+
+            let restoredSets = setSnapshots.map { $0.toWorkoutSet(exercise: exercise) }
+            exerciseSets[exerciseId] = restoredSets
+        }
+
+        // Clear the paused workout since we're resuming
+        modelContext.delete(paused)
+        try? modelContext.save()
     }
 
     private func initializeWorkout() {
@@ -346,6 +399,9 @@ struct WorkoutView: View {
     }
 
     private func saveWorkout() {
+        // Clear any paused workout state
+        clearPausedWorkout()
+
         let session = WorkoutSession(
             template: template,
             date: workoutStartTime,
@@ -365,9 +421,90 @@ struct WorkoutView: View {
         }
 
         modelContext.insert(session)
+
+        // Update plan progress if there's an active plan
+        PlanProgressService.shared.recordCompletedWorkout(session: session, in: modelContext)
+
         try? modelContext.save()
 
         dismiss()
+    }
+
+    // MARK: - Pause/Resume
+
+    private func pauseWorkout() {
+        savePausedState()
+        dismiss()
+    }
+
+    private func savePausedState() {
+        // Save even if no sets are completed - user may want to resume from where they left off
+        // We only skip if there are literally no sets initialized
+        let hasAnySets = !exerciseSets.isEmpty
+
+        // Convert WorkoutSets to snapshots
+        var snapshots: [UUID: [SetSnapshot]] = [:]
+        for (exerciseId, sets) in exerciseSets {
+            snapshots[exerciseId] = sets.map { SetSnapshot(from: $0) }
+        }
+
+        // Check if we already have a paused workout for this template
+        let templateId = template.id
+        let descriptor = FetchDescriptor<PausedWorkout>(
+            predicate: #Predicate { $0.template?.id == templateId }
+        )
+
+        do {
+            let existing = try modelContext.fetch(descriptor)
+            // Remove any existing paused workout for this template
+            for paused in existing {
+                modelContext.delete(paused)
+            }
+        } catch {
+            print("Error fetching existing paused workouts: \(error)")
+        }
+
+        // Only save if we have some state to preserve
+        guard hasAnySets else {
+            print("⏸️ No sets to save, skipping pause save")
+            return
+        }
+
+        // Create new paused workout
+        let paused = PausedWorkout(
+            template: template,
+            pausedAt: Date(),
+            startedAt: workoutStartTime,
+            currentExerciseIndex: currentExerciseIndex,
+            exerciseSets: snapshots,
+            plan: plan
+        )
+
+        modelContext.insert(paused)
+        
+        do {
+            try modelContext.save()
+            print("⏸️ Paused workout saved successfully for template: \(template.name)")
+        } catch {
+            print("⏸️ Error saving paused workout: \(error)")
+        }
+    }
+
+    private func clearPausedWorkout() {
+        let templateId = template.id
+        let descriptor = FetchDescriptor<PausedWorkout>(
+            predicate: #Predicate { $0.template?.id == templateId }
+        )
+
+        do {
+            let existing = try modelContext.fetch(descriptor)
+            for paused in existing {
+                modelContext.delete(paused)
+            }
+            try modelContext.save()
+        } catch {
+            print("Error clearing paused workout: \(error)")
+        }
     }
 
     // MARK: - Pain Flag Handling

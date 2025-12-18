@@ -17,6 +17,37 @@ final class WorkoutSessionTests: XCTestCase {
         XCTAssertTrue(allCases.contains(.home))
         XCTAssertTrue(allCases.contains(.mixed))
     }
+    
+    // MARK: - Relationship Tests
+    
+    func testWorkoutSession_TemplateRelationship() {
+        let session = WorkoutSession()
+        XCTAssertNil(session.template)
+        
+        let template = WorkoutTemplate(name: "Test Template", dayNumber: 1)
+        session.template = template
+        
+        XCTAssertNotNil(session.template)
+        XCTAssertEqual(session.template?.name, "Test Template")
+        
+        // Test optionality - should be able to set back to nil without crashing
+        session.template = nil
+        XCTAssertNil(session.template)
+    }
+    
+    func testWorkoutSession_OrphanedSession() {
+        // Simulates what happens if a template is deleted but session remains
+        let session = WorkoutSession()
+        let template = WorkoutTemplate(name: "Temporary Template", dayNumber: 1)
+        session.template = template
+        
+        // In a real context (SwiftData), deleting template would nullify relationship 
+        // depending on delete rule, but here we manually test nil handling
+        session.template = nil
+        
+        XCTAssertNil(session.template)
+        XCTAssertNoThrow(session.template?.name) // Safe access
+    }
 }
 
 // MARK: - Readiness Tests

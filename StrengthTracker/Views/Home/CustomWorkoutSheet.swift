@@ -334,11 +334,12 @@ struct CustomWorkoutSheet: View {
         
         // Create ExerciseTemplates for each exercise
         for (index, exercisePlan) in workout.exercises.enumerated() {
-            // Find matching exercise from library
-            var matchingExercise = exercises.first {
-                $0.name.lowercased() == exercisePlan.exerciseName.lowercased()
-            }
-            
+            // Find matching exercise from library using fuzzy matching
+            var matchingExercise = ExerciseMatcher.findBestMatch(
+                name: exercisePlan.exerciseName,
+                in: exercises
+            )
+
             // If exercise doesn't exist in library, create it from LLM metadata
             if matchingExercise == nil {
                 matchingExercise = createExerciseFromPlan(exercisePlan)

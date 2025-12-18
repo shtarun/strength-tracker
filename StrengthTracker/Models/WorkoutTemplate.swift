@@ -11,6 +11,7 @@ final class WorkoutTemplate {
     var updatedAt: Date
 
     @Relationship(deleteRule: .cascade) var exercises: [ExerciseTemplate]
+    @Relationship(inverse: \PlanWeek.templates) var planWeeks: [PlanWeek]?
 
     init(
         id: UUID = UUID(),
@@ -18,7 +19,7 @@ final class WorkoutTemplate {
         dayNumber: Int,
         targetDuration: Int = 60,
         exercises: [ExerciseTemplate] = [],
-        createdAt: Date = Date(),
+        createdAt: Date = Date(),   
         updatedAt: Date = Date()
     ) {
         self.id = id
