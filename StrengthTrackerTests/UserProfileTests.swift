@@ -19,6 +19,7 @@ final class UserProfileTests: XCTestCase {
         XCTAssertNil(profile.claudeAPIKey)
         XCTAssertNil(profile.openAIAPIKey)
         XCTAssertEqual(profile.appearanceMode, .auto)
+        XCTAssertTrue(profile.showYouTubeLinks) // Default is true
     }
     
     func testUserProfile_CustomValues() {
@@ -123,6 +124,29 @@ final class UserProfileTests: XCTestCase {
     func testAppearanceMode_Dark() {
         let profile = UserProfile(appearanceMode: .dark)
         XCTAssertEqual(profile.appearanceMode, .dark)
+    }
+    
+    // MARK: - YouTube Links Setting Tests
+    
+    func testShowYouTubeLinks_DefaultTrue() {
+        let profile = UserProfile()
+        XCTAssertTrue(profile.showYouTubeLinks)
+    }
+    
+    func testShowYouTubeLinks_CanBeDisabled() {
+        let profile = UserProfile(showYouTubeLinks: false)
+        XCTAssertFalse(profile.showYouTubeLinks)
+    }
+    
+    func testShowYouTubeLinks_CanBeToggled() {
+        let profile = UserProfile()
+        XCTAssertTrue(profile.showYouTubeLinks)
+        
+        profile.showYouTubeLinks = false
+        XCTAssertFalse(profile.showYouTubeLinks)
+        
+        profile.showYouTubeLinks = true
+        XCTAssertTrue(profile.showYouTubeLinks)
     }
 }
 

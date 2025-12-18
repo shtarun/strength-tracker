@@ -49,6 +49,50 @@ final class ExerciseLibraryTests: XCTestCase {
         XCTAssertFalse(exercise.hasFormGuidance)
     }
     
+    // MARK: - YouTube Video URL Tests
+    
+    func testExercise_WithYouTubeURL() {
+        let exercise = Exercise(
+            name: "Bench Press",
+            movementPattern: .horizontalPush,
+            primaryMuscles: [.chest],
+            secondaryMuscles: [.frontDelt, .triceps],
+            equipmentRequired: [.barbell, .bench, .rack],
+            formCues: ["Retract and depress shoulder blades"],
+            commonMistakes: ["Bouncing bar off chest"],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=rT7DgCr-3pg"
+        )
+        
+        XCTAssertNotNil(exercise.youtubeVideoURL)
+        XCTAssertTrue(exercise.youtubeVideoURL!.contains("youtube.com"))
+    }
+    
+    func testExercise_WithoutYouTubeURL() {
+        let exercise = Exercise(
+            name: "Mystery Exercise",
+            movementPattern: .isolation,
+            primaryMuscles: [.biceps],
+            secondaryMuscles: [],
+            equipmentRequired: []
+        )
+        
+        XCTAssertNil(exercise.youtubeVideoURL)
+    }
+    
+    func testExercise_YouTubeURL_IsOptional() {
+        let exercise = Exercise(
+            name: "Custom Exercise",
+            movementPattern: .squat,
+            primaryMuscles: [.quads],
+            secondaryMuscles: [],
+            equipmentRequired: [.bodyweight]
+        )
+        
+        // Should compile and work without youtubeVideoURL
+        XCTAssertEqual(exercise.name, "Custom Exercise")
+        XCTAssertNil(exercise.youtubeVideoURL)
+    }
+    
     // MARK: - Kettlebell Exercises Tests
     
     func testKettlebellExercise_Creation() {

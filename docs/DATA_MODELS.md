@@ -83,6 +83,8 @@ final class UserProfile {
     var preferredLLMProvider: LLMProviderType  // .claude, .openai, .offline
     var claudeAPIKey: String?
     var openAIAPIKey: String?
+    var appearanceMode: AppearanceMode    // .auto, .light, .dark
+    var showYouTubeLinks: Bool            // Show YouTube form video links
     var createdAt: Date
     var updatedAt: Date
     
@@ -165,7 +167,7 @@ var dumbbellIncrements: [Double] {
 
 ### Exercise
 
-Exercise library entries with movement classification.
+Exercise library entries with movement classification and form guidance.
 
 **File:** `Models/Exercise.swift`
 
@@ -181,6 +183,12 @@ final class Exercise {
     var isCompound: Bool
     var defaultProgressionType: ProgressionType
     var instructions: String?
+    var formCuesData: Data?               // Encoded [String] - form tips
+    var commonMistakesData: Data?         // Encoded [String] - mistakes to avoid
+    var youtubeVideoURL: String?          // YouTube form tutorial link
+    var isMobilityRoutine: Bool           // For mobility exercises
+    var routineType: String?              // "pre-workout" or "post-workout"
+    var durationSeconds: Int?             // For timed exercises
 }
 ```
 
@@ -190,8 +198,11 @@ final class Exercise {
 var primaryMuscles: [Muscle]
 var secondaryMuscles: [Muscle]
 var equipmentRequired: [Equipment]
+var formCues: [String]                 // Form tips for the exercise
+var commonMistakes: [String]           // Common mistakes to avoid
 var allMuscles: [Muscle]               // Primary + secondary
 var defaultWeightIncrement: Double     // 2.5kg barbell, 2.0kg dumbbell
+var hasFormGuidance: Bool              // True if has form cues or mistakes
 ```
 
 **Example Exercises:**

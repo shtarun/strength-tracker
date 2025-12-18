@@ -534,6 +534,16 @@ struct WorkoutView: View {
 | `ExerciseNavigation` | Previous/Next/Finish buttons |
 | `RestTimerSheet` | Countdown timer between sets |
 | `WorkoutSummarySheet` | Post-workout review |
+| `FormTipsSheet` | Form cues, common mistakes, YouTube link |
+
+**Form Tips Feature:**
+
+Exercises display an info icon (ℹ️) that opens a `FormTipsSheet` showing:
+- Key form cues for proper technique
+- Common mistakes to avoid
+- YouTube form video link (if available and enabled in settings)
+
+Users can toggle YouTube links in Profile → Settings.
 
 ---
 

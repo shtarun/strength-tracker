@@ -415,4 +415,100 @@ final class LLMServiceTests: XCTestCase {
             }
         }
     }
+    
+    // MARK: - CustomExercisePlan Tests
+    
+    func testCustomExercisePlan_Codable() {
+        let plan = CustomExercisePlan(
+            exerciseName: "Bench Press",
+            sets: 4,
+            reps: "6-8",
+            rpeCap: 8.0,
+            notes: "Focus on chest squeeze",
+            suggestedWeight: 100.0,
+            movementPattern: "horizontalPush",
+            primaryMuscles: ["chest", "triceps"],
+            isCompound: true,
+            equipmentRequired: ["barbell", "bench"],
+            youtubeVideoURL: "https://www.youtube.com/watch?v=rT7DgCr-3pg"
+        )
+        
+        let encoded = try? JSONEncoder().encode(plan)
+        XCTAssertNotNil(encoded)
+        
+        if let data = encoded {
+            let decoded = try? JSONDecoder().decode(CustomExercisePlan.self, from: data)
+            XCTAssertNotNil(decoded)
+            XCTAssertEqual(decoded?.exerciseName, "Bench Press")
+            XCTAssertEqual(decoded?.sets, 4)
+            XCTAssertEqual(decoded?.reps, "6-8")
+            XCTAssertEqual(decoded?.rpeCap, 8.0)
+            XCTAssertEqual(decoded?.youtubeVideoURL, "https://www.youtube.com/watch?v=rT7DgCr-3pg")
+            XCTAssertEqual(decoded?.movementPattern, "horizontalPush")
+            XCTAssertEqual(decoded?.primaryMuscles, ["chest", "triceps"])
+        }
+    }
+    
+    func testCustomExercisePlan_WithoutOptionalFields() {
+        let plan = CustomExercisePlan(
+            exerciseName: "Custom Exercise",
+            sets: 3,
+            reps: "10-12",
+            rpeCap: 7.5,
+            notes: nil,
+            suggestedWeight: nil,
+            movementPattern: nil,
+            primaryMuscles: nil,
+            isCompound: nil,
+            equipmentRequired: nil,
+            youtubeVideoURL: nil
+        )
+        
+        let encoded = try? JSONEncoder().encode(plan)
+        XCTAssertNotNil(encoded)
+        
+        if let data = encoded {
+            let decoded = try? JSONDecoder().decode(CustomExercisePlan.self, from: data)
+            XCTAssertNotNil(decoded)
+            XCTAssertEqual(decoded?.exerciseName, "Custom Exercise")
+            XCTAssertNil(decoded?.youtubeVideoURL)
+            XCTAssertNil(decoded?.movementPattern)
+            XCTAssertNil(decoded?.primaryMuscles)
+        }
+    }
+    
+    func testCustomWorkoutResponse_Codable() {
+        let response = CustomWorkoutResponse(
+            workoutName: "Upper Body Focus",
+            exercises: [
+                CustomExercisePlan(
+                    exerciseName: "Bench Press",
+                    sets: 4,
+                    reps: "6-8",
+                    rpeCap: 8.0,
+                    notes: nil,
+                    suggestedWeight: 100.0,
+                    movementPattern: "horizontalPush",
+                    primaryMuscles: ["chest"],
+                    isCompound: true,
+                    equipmentRequired: ["barbell"],
+                    youtubeVideoURL: "https://www.youtube.com/watch?v=rT7DgCr-3pg"
+                )
+            ],
+            reasoning: "Focused on compound pressing movements",
+            estimatedDuration: 45,
+            focusAreas: ["Chest", "Shoulders"]
+        )
+        
+        let encoded = try? JSONEncoder().encode(response)
+        XCTAssertNotNil(encoded)
+        
+        if let data = encoded {
+            let decoded = try? JSONDecoder().decode(CustomWorkoutResponse.self, from: data)
+            XCTAssertNotNil(decoded)
+            XCTAssertEqual(decoded?.workoutName, "Upper Body Focus")
+            XCTAssertEqual(decoded?.exercises.count, 1)
+            XCTAssertEqual(decoded?.exercises.first?.youtubeVideoURL, "https://www.youtube.com/watch?v=rT7DgCr-3pg")
+        }
+    }
 }
