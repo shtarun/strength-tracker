@@ -496,10 +496,8 @@ actor OfflineProgressionEngine {
 
         // If no preferred alternatives, accept any exercise that doesn't target pain
         if candidates.isEmpty {
-            for (exerciseName, bodyParts) in allExercises {
-                if !bodyParts.contains(painBodyPart) {
-                    candidates.append(exerciseName)
-                }
+            for (exerciseName, bodyParts) in allExercises where !bodyParts.contains(painBodyPart) {
+                candidates.append(exerciseName)
             }
         }
 

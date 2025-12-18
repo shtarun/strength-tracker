@@ -125,7 +125,7 @@ final class CustomWorkoutTests: XCTestCase {
             exercises: [
                 CustomExercisePlan(exerciseName: "Exercise 1", sets: 3, reps: "8", rpeCap: 8.0, notes: nil, suggestedWeight: nil),
                 CustomExercisePlan(exerciseName: "Exercise 2", sets: 3, reps: "10", rpeCap: 7.0, notes: nil, suggestedWeight: nil),
-                CustomExercisePlan(exerciseName: "Exercise 3", sets: 4, reps: "12", rpeCap: 6.0, notes: nil, suggestedWeight: nil),
+                CustomExercisePlan(exerciseName: "Exercise 3", sets: 4, reps: "12", rpeCap: 6.0, notes: nil, suggestedWeight: nil)
             ],
             reasoning: "Test",
             estimatedDuration: 45,
@@ -307,7 +307,7 @@ final class CustomWorkoutTests: XCTestCase {
         
         // When converted, all exercises should be included
         var exerciseTemplateCount = 0
-        for (index, _) in response.exercises.enumerated() {
+        for index in response.exercises.indices {
             // Simulating ExerciseTemplate creation
             exerciseTemplateCount += 1
             XCTAssertEqual(index + 1, exerciseTemplateCount)
@@ -361,4 +361,3 @@ final class CustomWorkoutTests: XCTestCase {
         XCTAssertEqual(prescription.topSetRepsMax, 15)
     }
 }
-

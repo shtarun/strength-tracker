@@ -291,13 +291,11 @@ struct ImportInsightsView: View {
                                 .font(.headline)
                             
                             HStack {
-                                let formatter = DateFormatter()
-                                let _ = formatter.dateStyle = .medium
-                                Text(formatter.string(from: range.lowerBound))
+                                Text(range.lowerBound.formatted(date: .abbreviated, time: .omitted))
                                 Image(systemName: "arrow.right")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
-                                Text(formatter.string(from: range.upperBound))
+                                Text(range.upperBound.formatted(date: .abbreviated, time: .omitted))
                             }
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
