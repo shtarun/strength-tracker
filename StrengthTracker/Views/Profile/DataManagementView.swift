@@ -107,7 +107,9 @@ struct DataManagementView: View {
                 allowedContentTypes: [.json],
                 allowsMultipleSelection: false
             ) { result in
-                handleFileImport(result)
+                Task { @MainActor in
+                    handleFileImport(result)
+                }
             }
             .alert("Import Data?", isPresented: $showImportConfirmation) {
                 Button("Cancel", role: .cancel) {
@@ -140,9 +142,9 @@ struct DataManagementView: View {
     private func exportAllData() {
         isProcessing = true
         
-        Task {
+        Task { @MainActor in
             do {
-                let data = try DataTransferService.shared.exportData(from: modelContext)
+                let data = try await DataTransferService.shared.exportData(from: modelContext)
                 exportData = data
                 showExportShareSheet = true
             } catch {
@@ -153,6 +155,7 @@ struct DataManagementView: View {
         }
     }
     
+    @MainActor
     private func handleFileImport(_ result: Result<[URL], Error>) {
         switch result {
         case .success(let urls):
@@ -190,9 +193,9 @@ struct DataManagementView: View {
         
         isProcessing = true
         
-        Task {
+        Task { @MainActor in
             do {
-                let insights = try DataTransferService.shared.importData(from: data, into: modelContext)
+                let insights = try await DataTransferService.shared.importData(from: data, into: modelContext)
                 importInsights = insights
                 showImportInsights = true
             } catch {

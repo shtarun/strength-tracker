@@ -315,7 +315,7 @@ final class DataTransferService {
         var totalVolume: Double = 0
         var exerciseSetCounts: [String: Int] = [:]
         var duplicatesSkipped = 0
-        var errors: [String] = []
+        let errors: [String] = []
         
         // Fetch existing data to avoid duplicates
         let existingSessionsDescriptor = FetchDescriptor<WorkoutSession>()
