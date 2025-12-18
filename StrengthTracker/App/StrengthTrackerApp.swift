@@ -86,6 +86,12 @@ struct StrengthTrackerApp: App {
             return
         }
         
+        // Configure LLMService with stored API keys on app launch
+        LLMService.shared.configure(
+            claudeAPIKey: profile.claudeAPIKey,
+            openAIAPIKey: profile.openAIAPIKey
+        )
+        
         let templates = (try? context.fetch(templateDescriptor)) ?? []
         
         // If user exists but has no templates, regenerate them
