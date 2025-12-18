@@ -65,6 +65,7 @@ struct TemplatesView: View {
                 }
             }
             .navigationTitle("Templates")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     EditButton()

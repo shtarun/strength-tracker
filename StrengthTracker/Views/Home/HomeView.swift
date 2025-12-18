@@ -225,6 +225,7 @@ struct HomeView: View {
                 .padding()
             }
             .navigationTitle("Home")
+            .navigationBarTitleDisplayMode(.inline)
             .sheet(item: $templateForReadiness) { template in
                 ReadinessCheckSheet(
                     template: template,

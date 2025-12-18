@@ -57,6 +57,7 @@ struct ProgressView_Custom: View {
                 }
             }
             .navigationTitle("Progress")
+            .navigationBarTitleDisplayMode(.inline)
             .sheet(isPresented: $showWeeklyReview) {
                 WeeklyReviewSheet(
                     sessions: filteredSessions,

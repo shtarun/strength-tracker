@@ -202,6 +202,7 @@ struct ProfileView: View {
                 }
             }
             .navigationTitle("Profile")
+            .navigationBarTitleDisplayMode(.inline)
             .sheet(isPresented: $showEquipmentEditor) {
                 if let profile = profile {
                     EquipmentEditorSheet(equipment: profile.equipmentProfile ?? EquipmentProfile())
