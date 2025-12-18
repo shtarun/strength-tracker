@@ -16,6 +16,7 @@ final class UserProfile {
     var openAIAPIKey: String?
     var appearanceMode: AppearanceMode = AppearanceMode.auto
     var showYouTubeLinks: Bool = true
+    var activeDaysGoal: Int = 4
     var createdAt: Date
     var updatedAt: Date
 
@@ -35,6 +36,7 @@ final class UserProfile {
         openAIAPIKey: String? = nil,
         appearanceMode: AppearanceMode = .auto,
         showYouTubeLinks: Bool = true,
+        activeDaysGoal: Int = 4,
         createdAt: Date = Date(),
         updatedAt: Date = Date()
     ) {
@@ -51,6 +53,7 @@ final class UserProfile {
         self.openAIAPIKey = openAIAPIKey
         self.appearanceMode = appearanceMode
         self.showYouTubeLinks = showYouTubeLinks
+        self.activeDaysGoal = activeDaysGoal
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }

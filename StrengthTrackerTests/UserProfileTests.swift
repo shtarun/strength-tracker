@@ -20,6 +20,7 @@ final class UserProfileTests: XCTestCase {
         XCTAssertNil(profile.openAIAPIKey)
         XCTAssertEqual(profile.appearanceMode, .auto)
         XCTAssertTrue(profile.showYouTubeLinks) // Default is true
+        XCTAssertEqual(profile.activeDaysGoal, 4)
     }
     
     func testUserProfile_CustomValues() {
@@ -33,7 +34,8 @@ final class UserProfileTests: XCTestCase {
             unitSystem: .imperial,
             preferredLLMProvider: .claude,
             claudeAPIKey: "test-key",
-            appearanceMode: .dark
+            appearanceMode: .dark,
+            activeDaysGoal: 6
         )
         
         XCTAssertEqual(profile.name, "John")
@@ -46,6 +48,7 @@ final class UserProfileTests: XCTestCase {
         XCTAssertEqual(profile.preferredLLMProvider, .claude)
         XCTAssertEqual(profile.claudeAPIKey, "test-key")
         XCTAssertEqual(profile.appearanceMode, .dark)
+        XCTAssertEqual(profile.activeDaysGoal, 6)
     }
     
     // MARK: - API Key Tests
@@ -147,6 +150,19 @@ final class UserProfileTests: XCTestCase {
         
         profile.showYouTubeLinks = true
         XCTAssertTrue(profile.showYouTubeLinks)
+    }
+    
+    // MARK: - Active Days Goal Tests
+    
+    func testActiveDaysGoal_Update() {
+        let profile = UserProfile()
+        XCTAssertEqual(profile.activeDaysGoal, 4)
+        
+        profile.activeDaysGoal = 6
+        XCTAssertEqual(profile.activeDaysGoal, 6)
+        
+        profile.activeDaysGoal = 2
+        XCTAssertEqual(profile.activeDaysGoal, 2)
     }
 }
 

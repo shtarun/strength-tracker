@@ -88,6 +88,7 @@ final class UserProfile {
     var openAIAPIKey: String?
     var appearanceMode: AppearanceMode    // .auto, .light, .dark
     var showYouTubeLinks: Bool            // Show YouTube form video links
+    var activeDaysGoal: Int               // Weekly workout goal (1-7)
     var createdAt: Date
     var updatedAt: Date
     

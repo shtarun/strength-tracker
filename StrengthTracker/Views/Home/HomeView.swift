@@ -74,25 +74,77 @@ struct HomeView: View {
         return templates[nextIndex]
     }
 
+    // MARK: - Status Logic
+    
+    private var isCompletedToday: Bool {
+        guard let lastSession = recentSessions.first else { return false }
+        return Calendar.current.isDateInToday(lastSession.date) && lastSession.isCompleted
+    }
+    
+    private var workoutsCompletedThisWeek: Int {
+        let calendar = Calendar.current
+        let now = Date()
+        guard let weekInterval = calendar.dateInterval(of: .weekOfYear, for: now) else { return 0 }
+        
+        return recentSessions.filter { session in
+            session.isCompleted && weekInterval.contains(session.date)
+        }.count
+    }
+    
+    private var effectiveGoal: Int {
+        if let plan = activePlan {
+            return plan.workoutsPerWeek
+        } else {
+            return profile?.activeDaysGoal ?? 4
+        }
+    }
+    
+    private var isWeeklyGoalMet: Bool {
+        return workoutsCompletedThisWeek >= effectiveGoal
+    }
+    
+    // MARK: - Message Logic
+    
+    private var homeMessage: String {
+        if isCompletedToday {
+            return "Great work today! You've crushed your workout."
+        } else if isWeeklyGoalMet {
+            if activePlan != nil {
+                return "You've hit your weekly plan goal! Enjoy your recovery day."
+            } else {
+                return "You've hit your weekly activity goal! Enjoy your rest."
+            }
+        } else {
+            let remaining = effectiveGoal - workoutsCompletedThisWeek
+            if remaining > 0 {
+                return "Let's get moving! \(remaining) more workout\(remaining == 1 ? "" : "s") to hit your weekly goal."
+            } else {
+                return "Ready for another session? Let's keep the streak alive!"
+            }
+        }
+    }
+    
+    private var shouldShowRestSuggestion: Bool {
+        // Suggest rest if weekly goal met AND (either worked out today OR completed > goal)
+        return isWeeklyGoalMet && (isCompletedToday || workoutsCompletedThisWeek > effectiveGoal)
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
-                    // Greeting
+                    // Greeting & Message Card
                     if let profile = profile {
-                        GreetingCard(name: profile.name)
+                        GreetingHeader(name: profile.name)
+                        
+                        MessageCard(
+                            message: homeMessage,
+                            isGoalMet: isWeeklyGoalMet,
+                            isCompletedToday: isCompletedToday
+                        )
                     }
 
-                    // Debug: Log paused workouts state
-                    let _ = {
-                        print("🏠 HomeView: Total paused workouts: \(pausedWorkouts.count)")
-                        for pw in pausedWorkouts {
-                            print("🏠 - Paused workout: template=\(pw.template?.name ?? "nil"), isValid=\(pw.isValid), pausedAt=\(pw.pausedAt)")
-                        }
-                        print("🏠 validPausedWorkout: \(validPausedWorkout?.template?.name ?? "none")")
-                    }()
-                    
-                    // Active plan card
+                    // Active plan card - Always visible if plan exists
                     if let plan = activePlan {
                         ActivePlanHomeCard(plan: plan)
                             .onTapGesture {
@@ -100,7 +152,7 @@ struct HomeView: View {
                             }
                     }
 
-                    // Resume paused workout banner
+                    // Resume paused workout banner - Highest priority for workout actions
                     if let paused = validPausedWorkout, let template = paused.template {
                         ResumeWorkoutCard(
                             pausedWorkout: paused,
@@ -116,20 +168,34 @@ struct HomeView: View {
                             }
                         )
                     }
-
-                    // Today's workout card (only show if no paused workout)
+                    
+                    // Main Action Area: Rest Suggestion OR Today's Workout
+                    if shouldShowRestSuggestion {
+                         RestDayCard()
+                    }
+                    
+                    // Show workout card if not a rest day, OR if user wants to work out anyway (we could add a "Work out anyway" button later, but for now just hiding it if rest suggested is cleaner, or we can show it below)
+                    // Requirement: "show me the active plan and the upcoming workout"
+                    // If completed today, we might still want to show upcoming workout (next one)
+                    
                     if validPausedWorkout == nil, let template = nextTemplate {
-                        TodayWorkoutCard(
-                            template: template,
-                            allTemplates: availableTemplates,
-                            isLoading: isGeneratingPlan,
-                            onStart: {
-                                templateForReadiness = template
-                            },
-                            onSwap: {
-                                showWorkoutPicker = true
-                            }
-                        )
+                        if !isCompletedToday || activePlan != nil { 
+                             // Show upcoming workout if not done today, OR if on a plan (so they can see what's next even if done)
+                             // If done today, maybe change title to "Upcoming Workout" instead of "Today's Workout"
+                             
+                            TodayWorkoutCard(
+                                title: isCompletedToday ? "Upcoming Workout" : "Today's Workout",
+                                template: template,
+                                allTemplates: availableTemplates,
+                                isLoading: isGeneratingPlan,
+                                onStart: {
+                                    templateForReadiness = template
+                                },
+                                onSwap: {
+                                    showWorkoutPicker = true
+                                }
+                            )
+                        }
                     } else if validPausedWorkout == nil && availableTemplates.isEmpty {
                         // No templates yet
                         ContentUnavailableView(
@@ -469,7 +535,7 @@ struct HomeView: View {
 
 // MARK: - Subviews
 
-struct GreetingCard: View {
+struct GreetingHeader: View {
     let name: String
 
     private var greeting: String {
@@ -492,6 +558,69 @@ struct GreetingCard: View {
             }
             Spacer()
         }
+    }
+}
+
+struct MessageCard: View {
+    let message: String
+    let isGoalMet: Bool
+    let isCompletedToday: Bool
+    
+    var body: some View {
+        HStack(spacing: 16) {
+            Image(systemName: iconName)
+                .font(.title)
+                .foregroundStyle(iconColor)
+                .frame(width: 50, height: 50)
+                .background(iconColor.opacity(0.1))
+                .clipShape(Circle())
+            
+            Text(message)
+                .font(.subheadline) // Slightly smaller font for longer messages
+                .foregroundStyle(.primary)
+                .fixedSize(horizontal: false, vertical: true) // Allow multiline
+            
+            Spacer()
+        }
+        .padding()
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: .black.opacity(0.05), radius: 5, y: 2)
+    }
+    
+    private var iconName: String {
+        if isCompletedToday { return "checkmark.seal.fill" }
+        if isGoalMet { return "trophy.fill" }
+        return "flame.fill"
+    }
+    
+    private var iconColor: Color {
+        if isCompletedToday { return .green }
+        if isGoalMet { return .yellow }
+        return .orange
+    }
+}
+
+struct RestDayCard: View {
+    var body: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "moon.stars.fill")
+                .font(.system(size: 40))
+                .foregroundStyle(.indigo)
+            
+            Text("Rest & Recovery")
+                .font(.title3.bold())
+            
+            Text("You've met your activity goal for the week. Take some time to recover and come back stronger!")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(24)
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: .black.opacity(0.05), radius: 5, y: 2)
     }
 }
 
@@ -656,6 +785,7 @@ struct ResumeWorkoutCard: View {
 }
 
 struct TodayWorkoutCard: View {
+    let title: String
     let template: WorkoutTemplate
     let allTemplates: [WorkoutTemplate]
     let isLoading: Bool
@@ -668,7 +798,7 @@ struct TodayWorkoutCard: View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Today's Workout")
+                    Text(title)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                     Text(template.name)
