@@ -14,6 +14,9 @@ This document details the SwiftData entities, their properties, relationships, a
   - [WorkoutSession](#workoutsession)
   - [WorkoutSet](#workoutset)
   - [PainFlag](#painflag)
+  - [WorkoutPlan](#workoutplan)
+  - [PlanWeek](#planweek)
+- [Plan Templates](#plan-templates)
 - [Supporting Types](#supporting-types)
 - [Enumerations](#enumerations)
 - [SwiftData Configuration](#swiftdata-configuration)
@@ -336,6 +339,10 @@ final class WorkoutSession {
     @Relationship var template: WorkoutTemplate?
     @Relationship(deleteRule: .cascade) var sets: [WorkoutSet]
 }
+
+**Note on Relationships:**
+The `template` relationship is optional. Logic must handle cases where a template is deleted but the historical session remains (preventing "invalidated model" crashes).
+
 ```
 
 **Computed Properties:**
@@ -422,6 +429,210 @@ final class PainFlag {
 - Severe flags → automatic exercise swap
 - Moderate flags → warning shown
 - Resolved flags → no longer affect planning
+
+---
+
+### WorkoutPlan
+
+Multi-week training programs with periodization.
+
+**File:** `Models/WorkoutPlan.swift`
+
+```swift
+@Model
+final class WorkoutPlan {
+    var id: UUID
+    var name: String
+    var planDescription: String?
+    var durationWeeks: Int                 // 4, 6, 8, 12
+    var currentWeek: Int                   // 1-based
+    var isActive: Bool
+    var startDate: Date?
+    var workoutsPerWeek: Int               // 3-6
+    var completedWorkoutsThisWeek: Int
+    var goalRaw: String                    // Encoded Goal
+    var createdAt: Date
+    var updatedAt: Date
+
+    @Relationship(deleteRule: .cascade)
+    var weeks: [PlanWeek]
+}
+```
+
+**Computed Properties:**
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `goal` | `Goal` | Decoded training goal |
+| `statusText` | `String` | "Week 3 of 8" or "Not started" |
+| `progressPercentage` | `Double` | 0.0-1.0 completion progress |
+| `currentPlanWeek` | `PlanWeek?` | Current week object |
+| `isCompleted` | `Bool` | All weeks completed |
+| `sortedWeeks` | `[PlanWeek]` | Weeks sorted by number |
+
+**Key Methods:**
+
+```swift
+func recordCompletedWorkout()    // Increment progress, auto-advance week
+func advanceWeekIfNeeded()       // Move to next week when complete
+func activate(in context:)       // Activate plan, deactivate others
+```
+
+---
+
+### PlanWeek
+
+Individual week within a workout plan with modifiers.
+
+**File:** `Models/PlanWeek.swift`
+
+```swift
+@Model
+final class PlanWeek {
+    var id: UUID
+    var weekNumber: Int
+    var weekTypeRaw: String                // Encoded WeekType
+    var intensityModifier: Double          // 0.6-1.05
+    var volumeModifier: Double             // 0.3-1.0
+    var notes: String?
+    var isCompleted: Bool
+
+    @Relationship var templates: [WorkoutTemplate]
+    @Relationship(inverse: \WorkoutPlan.weeks) var plan: WorkoutPlan?
+}
+```
+
+**Week Types and Modifiers:**
+
+| WeekType | Intensity | Volume | RPE Cap | Description |
+|----------|-----------|--------|---------|-------------|
+| `.regular` | 100% | 100% | 10 | Normal training |
+| `.deload` | 60% | 50% | 7 | Recovery week |
+| `.peak` | 105% | 70% | 9.5 | Overreaching |
+| `.test` | 100% | 30% | 10 | Max testing |
+
+**Computed Properties:**
+
+```swift
+var weekType: WeekType         // Decoded from weekTypeRaw
+var weekLabel: String          // "Week 1", "Week 2", etc.
+var sortedTemplates: [WorkoutTemplate]
+var summaryText: String        // "3 workouts" or "No workouts assigned"
+
+func adjustedWeight(baseWeight:) -> Double  // Apply intensity modifier
+func applyModifiers(to prescription:) -> Prescription  // Adjust prescription
+```
+
+---
+
+## Plan Templates
+
+Pre-built workout plan templates with full exercise definitions.
+
+**File:** `Services/PlanTemplateLibrary.swift`
+
+### PlanTemplate
+
+Static template for creating workout plans.
+
+```swift
+struct PlanTemplate: Identifiable {
+    let id: UUID
+    let name: String
+    let description: String
+    let durationWeeks: Int
+    let workoutsPerWeek: Int
+    let goal: Goal
+    let split: Split
+    let weekStructure: [WeekDefinition]
+    let workoutNames: [String]
+    let workoutExercises: [WorkoutExerciseDefinition]
+}
+```
+
+### Available Templates
+
+| Template | Duration | Frequency | Split | Goal |
+|----------|----------|-----------|-------|------|
+| **Beginner Strength** | 8 weeks | 3x/week | Full Body | Strength |
+| **Hypertrophy Block** | 6 weeks | 4x/week | Upper/Lower | Hypertrophy |
+| **PPL Power Builder** | 8 weeks | 6x/week | Push/Pull/Legs | Both |
+| **Strength Peaking** | 4 weeks | 4x/week | Upper/Lower | Strength |
+| **12-Week Transform** | 12 weeks | 4x/week | Upper/Lower | Both |
+
+### Template Exercise Structure
+
+Each template includes complete exercise definitions:
+
+```swift
+struct WorkoutExerciseDefinition {
+    let workoutName: String              // "Upper A", "Push", etc.
+    let exercises: [ExerciseDefinition]
+}
+
+struct ExerciseDefinition {
+    let name: String                     // "Bench Press"
+    let sets: Int                        // 4
+    let repsMin: Int                     // 6
+    let repsMax: Int                     // 8
+    let rpe: Double                      // 8.0
+    let isOptional: Bool                 // false
+}
+```
+
+### Example: Beginner Strength Template
+
+**Full Body A (Squat Focus):**
+| Exercise | Sets | Reps | RPE |
+|----------|------|------|-----|
+| Barbell Squat | 3 | 5 | 7 |
+| Bench Press | 3 | 5 | 7 |
+| Barbell Row | 3 | 5-8 | 7 |
+| Dumbbell Shoulder Press | 2 | 8-10 | 7 |
+| Plank | 3 | 30s | 6 |
+
+**Full Body B (Deadlift Focus):**
+| Exercise | Sets | Reps | RPE |
+|----------|------|------|-----|
+| Deadlift | 3 | 5 | 7 |
+| Overhead Press | 3 | 5 | 7 |
+| Lat Pulldown | 3 | 8-10 | 7 |
+| Leg Press | 3 | 8-10 | 7 |
+| Dumbbell Curl | 2 | 10-12 | 7 |
+
+### Creating Plans from Templates
+
+```swift
+// New method with exercise definitions
+let plan = PlanTemplateLibrary.createPlan(
+    from: template,
+    exercises: exercises,        // Exercise library for matching
+    in: modelContext
+)
+
+// Creates:
+// - WorkoutPlan with all weeks
+// - WorkoutTemplate for each workout
+// - ExerciseTemplate for each exercise with prescriptions
+// - Uses ExerciseMatcher for fuzzy name matching
+```
+
+### Exercise Matching
+
+The `ExerciseMatcher` utility provides fuzzy matching for exercise names:
+
+```swift
+ExerciseMatcher.findBestMatch(name: "Barbell Bench Press", in: exercises)
+// Returns: Exercise with name "Bench Press"
+```
+
+**Matching Priority:**
+1. Exact match
+2. Contains match ("Barbell Bench Press" contains "Bench Press")
+3. Reverse contains match
+4. Word-based matching (most common words)
+5. Prefix stripping ("barbell", "dumbbell", etc.)
+6. Synonym matching ("OHP" → "Overhead Press")
 
 ---
 
@@ -558,6 +769,23 @@ enum LLMProviderType: String, Codable, CaseIterable {
 }
 ```
 
+### WeekType
+```swift
+enum WeekType: String, Codable, CaseIterable {
+    case regular = "regular"
+    case deload = "deload"
+    case peak = "peak"
+    case test = "test"
+
+    var intensityModifier: Double  // 0.6-1.05
+    var volumeModifier: Double     // 0.3-1.0
+    var rpeCap: Double             // 7.0-10.0
+    var icon: String               // SF Symbol name
+    var color: Color               // SwiftUI color
+    var coachingNotes: String      // Training guidance
+}
+```
+
 ---
 
 ## SwiftData Configuration
@@ -575,7 +803,10 @@ let schema = Schema([
     WorkoutTemplate.self,
     WorkoutSession.self,
     WorkoutSet.self,
-    PainFlag.self
+    PainFlag.self,
+    WorkoutPlan.self,
+    PlanWeek.self,
+    PausedWorkout.self
 ])
 
 let modelConfiguration = ModelConfiguration(

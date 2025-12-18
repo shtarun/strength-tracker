@@ -52,6 +52,19 @@
 		044 /* AppearanceMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 144 /* AppearanceMode.swift */; };
 		045 /* DataTransferService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 145 /* DataTransferService.swift */; };
 		046 /* DataManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 146 /* DataManagementView.swift */; };
+		047 /* PausedWorkout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 147 /* PausedWorkout.swift */; };
+		048 /* WeekType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 148 /* WeekType.swift */; };
+		049 /* WorkoutPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 149 /* WorkoutPlan.swift */; };
+		050 /* PlanWeek.swift in Sources */ = {isa = PBXBuildFile; fileRef = 150 /* PlanWeek.swift */; };
+		051 /* PlanTemplateLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 151 /* PlanTemplateLibrary.swift */; };
+		052 /* PlanProgressService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 152 /* PlanProgressService.swift */; };
+		053 /* PlansListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 153 /* PlansListView.swift */; };
+		054 /* PlanDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 154 /* PlanDetailView.swift */; };
+		055 /* CreatePlanSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 155 /* CreatePlanSheet.swift */; };
+		056 /* AIPlanGeneratorSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 156 /* AIPlanGeneratorSheet.swift */; };
+		057 /* WeekDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 157 /* WeekDetailView.swift */; };
+		058 /* PlanTemplatesSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 158 /* PlanTemplatesSheet.swift */; };
+		059 /* ExerciseMatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 159 /* ExerciseMatcher.swift */; };
 		T001 /* E1RMCalculatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T101 /* E1RMCalculatorTests.swift */; };
 		T002 /* ExerciseLibraryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T102 /* ExerciseLibraryTests.swift */; };
 		T003 /* LLMServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T103 /* LLMServiceTests.swift */; };
@@ -64,6 +77,8 @@
 		T010 /* UserProfileTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T110 /* UserProfileTests.swift */; };
 		T011 /* WorkoutSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T111 /* WorkoutSessionTests.swift */; };
 		T012 /* DataTransferServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T112 /* DataTransferServiceTests.swift */; };
+		T013 /* WorkoutPlanTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T113 /* WorkoutPlanTests.swift */; };
+		T014 /* CustomWorkoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = T114 /* CustomWorkoutTests.swift */; };
 		U001 /* OnboardingUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = U101 /* OnboardingUITests.swift */; };
 		U002 /* ProfileUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = U102 /* ProfileUITests.swift */; };
 		U003 /* ProgressUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = U103 /* ProgressUITests.swift */; };
@@ -135,6 +150,19 @@
 		144 /* AppearanceMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearanceMode.swift; sourceTree = "<group>"; };
 		145 /* DataTransferService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataTransferService.swift; sourceTree = "<group>"; };
 		146 /* DataManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataManagementView.swift; sourceTree = "<group>"; };
+		147 /* PausedWorkout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PausedWorkout.swift; sourceTree = "<group>"; };
+		148 /* WeekType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeekType.swift; sourceTree = "<group>"; };
+		149 /* WorkoutPlan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutPlan.swift; sourceTree = "<group>"; };
+		150 /* PlanWeek.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanWeek.swift; sourceTree = "<group>"; };
+		151 /* PlanTemplateLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanTemplateLibrary.swift; sourceTree = "<group>"; };
+		152 /* PlanProgressService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanProgressService.swift; sourceTree = "<group>"; };
+		153 /* PlansListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlansListView.swift; sourceTree = "<group>"; };
+		154 /* PlanDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanDetailView.swift; sourceTree = "<group>"; };
+		155 /* CreatePlanSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatePlanSheet.swift; sourceTree = "<group>"; };
+		156 /* AIPlanGeneratorSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIPlanGeneratorSheet.swift; sourceTree = "<group>"; };
+		157 /* WeekDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeekDetailView.swift; sourceTree = "<group>"; };
+		158 /* PlanTemplatesSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanTemplatesSheet.swift; sourceTree = "<group>"; };
+		159 /* ExerciseMatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseMatcher.swift; sourceTree = "<group>"; };
 		T100 /* StrengthTrackerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = StrengthTrackerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		T101 /* E1RMCalculatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = E1RMCalculatorTests.swift; sourceTree = "<group>"; };
 		T102 /* ExerciseLibraryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseLibraryTests.swift; sourceTree = "<group>"; };
@@ -148,6 +176,8 @@
 		T110 /* UserProfileTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfileTests.swift; sourceTree = "<group>"; };
 		T111 /* WorkoutSessionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutSessionTests.swift; sourceTree = "<group>"; };
 		T112 /* DataTransferServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataTransferServiceTests.swift; sourceTree = "<group>"; };
+		T113 /* WorkoutPlanTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutPlanTests.swift; sourceTree = "<group>"; };
+		T114 /* CustomWorkoutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomWorkoutTests.swift; sourceTree = "<group>"; };
 		U100 /* StrengthTrackerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = StrengthTrackerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		U101 /* OnboardingUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingUITests.swift; sourceTree = "<group>"; };
 		U102 /* ProfileUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileUITests.swift; sourceTree = "<group>"; };
@@ -235,6 +265,9 @@
 				118 /* WorkoutSession.swift */,
 				119 /* WorkoutSet.swift */,
 				120 /* PainFlag.swift */,
+				147 /* PausedWorkout.swift */,
+				149 /* WorkoutPlan.swift */,
+				150 /* PlanWeek.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -258,6 +291,8 @@
 				125 /* TemplateGenerator.swift */,
 				142 /* StallDetector.swift */,
 				145 /* DataTransferService.swift */,
+				151 /* PlanTemplateLibrary.swift */,
+				152 /* PlanProgressService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -266,6 +301,7 @@
 			isa = PBXGroup;
 			children = (
 				121 /* E1RMCalculator.swift */,
+				159 /* ExerciseMatcher.swift */,
 				122 /* PlateMathCalculator.swift */,
 			);
 			path = Utilities;
@@ -281,6 +317,7 @@
 				314 /* Templates */,
 				315 /* Progress */,
 				316 /* Profile */,
+				317 /* Plans */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -300,6 +337,7 @@
 				112 /* UnitSystem.swift */,
 				113 /* LLMProvider.swift */,
 				144 /* AppearanceMode.swift */,
+				148 /* WeekType.swift */,
 			);
 			path = Enums;
 			sourceTree = "<group>";
@@ -365,6 +403,19 @@
 			path = Profile;
 			sourceTree = "<group>";
 		};
+		317 /* Plans */ = {
+			isa = PBXGroup;
+			children = (
+				153 /* PlansListView.swift */,
+				154 /* PlanDetailView.swift */,
+				155 /* CreatePlanSheet.swift */,
+				156 /* AIPlanGeneratorSheet.swift */,
+				157 /* WeekDetailView.swift */,
+				158 /* PlanTemplatesSheet.swift */,
+			);
+			path = Plans;
+			sourceTree = "<group>";
+		};
 		T300 /* StrengthTrackerTests */ = {
 			isa = PBXGroup;
 			children = (
@@ -380,6 +431,8 @@
 				T110 /* UserProfileTests.swift */,
 				T111 /* WorkoutSessionTests.swift */,
 				T112 /* DataTransferServiceTests.swift */,
+				T113 /* WorkoutPlanTests.swift */,
+				T114 /* CustomWorkoutTests.swift */,
 			);
 			path = StrengthTrackerTests;
 			sourceTree = "<group>";
@@ -569,6 +622,19 @@
 				044 /* AppearanceMode.swift in Sources */,
 				045 /* DataTransferService.swift in Sources */,
 				046 /* DataManagementView.swift in Sources */,
+				047 /* PausedWorkout.swift in Sources */,
+				048 /* WeekType.swift in Sources */,
+				049 /* WorkoutPlan.swift in Sources */,
+				050 /* PlanWeek.swift in Sources */,
+				051 /* PlanTemplateLibrary.swift in Sources */,
+				052 /* PlanProgressService.swift in Sources */,
+				053 /* PlansListView.swift in Sources */,
+				054 /* PlanDetailView.swift in Sources */,
+				055 /* CreatePlanSheet.swift in Sources */,
+				056 /* AIPlanGeneratorSheet.swift in Sources */,
+				057 /* WeekDetailView.swift in Sources */,
+				058 /* PlanTemplatesSheet.swift in Sources */,
+				059 /* ExerciseMatcher.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -588,6 +654,8 @@
 				T010 /* UserProfileTests.swift in Sources */,
 				T011 /* WorkoutSessionTests.swift in Sources */,
 				T012 /* DataTransferServiceTests.swift in Sources */,
+				T013 /* WorkoutPlanTests.swift in Sources */,
+				T014 /* CustomWorkoutTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
