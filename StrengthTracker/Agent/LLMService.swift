@@ -9,6 +9,7 @@ protocol LLMProvider {
     func analyzeStall(context: StallContext) async throws -> StallAnalysisResponse
     func generateWeeklyReview(context: WeeklyReviewContext) async throws -> WeeklyReviewResponse
     func generateCustomWorkout(request: CustomWorkoutRequest) async throws -> CustomWorkoutResponse
+    func generateWorkoutPlan(request: GeneratePlanRequest) async throws -> GeneratedPlanResponse
 }
 
 // MARK: - Request/Response Types
@@ -210,6 +211,85 @@ struct CustomExercisePlan: Codable {
     let primaryMuscles: [String]? // e.g., ["chest", "triceps"]
     let isCompound: Bool?
     let equipmentRequired: [String]? // e.g., ["barbell", "bench"]
+    let youtubeVideoURL: String? // Form tutorial video URL (prefer AthleanX)
+    
+    init(
+        exerciseName: String,
+        sets: Int,
+        reps: String,
+        rpeCap: Double,
+        notes: String? = nil,
+        suggestedWeight: Double? = nil,
+        movementPattern: String? = nil,
+        primaryMuscles: [String]? = nil,
+        isCompound: Bool? = nil,
+        equipmentRequired: [String]? = nil,
+        youtubeVideoURL: String? = nil
+    ) {
+        self.exerciseName = exerciseName
+        self.sets = sets
+        self.reps = reps
+        self.rpeCap = rpeCap
+        self.notes = notes
+        self.suggestedWeight = suggestedWeight
+        self.movementPattern = movementPattern
+        self.primaryMuscles = primaryMuscles
+        self.isCompound = isCompound
+        self.equipmentRequired = equipmentRequired
+        self.youtubeVideoURL = youtubeVideoURL
+    }
+    
+    var repsMin: Int {
+        let parts = reps.split(separator: "-")
+        return Int(parts.first ?? "8") ?? 8
+    }
+    
+    var repsMax: Int {
+        let parts = reps.split(separator: "-")
+        return Int(parts.last ?? "10") ?? 10
+    }
+}
+
+// MARK: - Workout Plan Generation Types
+
+struct GeneratePlanRequest: Codable {
+    let goal: Goal
+    let durationWeeks: Int
+    let daysPerWeek: Int
+    let split: Split
+    let equipment: [Equipment]
+    let includeDeloads: Bool
+    let focusAreas: [Muscle]?
+}
+
+struct GeneratedPlanResponse: Codable {
+    let planName: String
+    let description: String
+    let weeks: [GeneratedWeek]
+    let coachingNotes: String
+}
+
+struct GeneratedWeek: Codable {
+    let weekNumber: Int
+    let weekType: String // "regular", "deload", "peak", "test"
+    let workouts: [GeneratedWorkout]
+    let weekNotes: String?
+}
+
+struct GeneratedWorkout: Codable {
+    let dayNumber: Int
+    let name: String
+    let exercises: [GeneratedExercise]
+    let targetDuration: Int
+}
+
+struct GeneratedExercise: Codable {
+    let exerciseName: String
+    let sets: Int
+    let repsMin: Int
+    let repsMax: Int
+    let rpe: Double?
+    let notes: String?
 }
 
 // MARK: - LLM Service Manager
@@ -338,6 +418,26 @@ class LLMService: ObservableObject {
         // Custom workouts require LLM - no offline fallback
         throw LLMError.noProvider("Custom workouts require an AI provider. Please configure Claude or OpenAI in Settings.")
     }
+    
+    func generateWorkoutPlan(
+        request: GeneratePlanRequest,
+        provider: LLMProviderType
+    ) async throws -> GeneratedPlanResponse {
+        isLoading = true
+        defer { isLoading = false }
+        
+        if provider != .offline, let llmProvider = getProvider(for: provider) {
+            do {
+                return try await llmProvider.generateWorkoutPlan(request: request)
+            } catch {
+                lastError = "LLM unavailable: \(error.localizedDescription)"
+                throw error
+            }
+        }
+        
+        // Workout plan generation requires LLM - no offline fallback
+        throw LLMError.noProvider("Plan generation requires an AI provider. Please configure Claude or OpenAI in Settings.")
+    }
 }
 
 // MARK: - System Prompt
@@ -349,26 +449,48 @@ enum CoachPrompts {
     - Equipment profile (gym/home, available gear)
     - Current readiness (energy, soreness, time)
     - Goals (strength/hypertrophy/both)
+    - Pain flags (body parts with pain, severity, associated exercises)
 
     Rules:
     1. Prefer stable, predictable plans - avoid random variation
     2. Make the smallest effective change to drive progress
     3. Never exceed user's available equipment
-    4. Respect readiness flags:
+    4. CRITICAL - Pain flags are the highest priority:
+       - If an exercise targets a body part with an active pain flag, ALWAYS substitute it
+       - IMPORTANT: Choose substitutes from COMPLETELY DIFFERENT body parts
+       - Upper body pain (chest/shoulders/back/arms) → substitute with LEG exercises
+       - Leg pain → substitute with UPPER BODY exercises (back/chest preferred)
+       - Core pain → substitute with limb exercises (legs/arms)
+       - Severity matters: Mild = consider lighter load, Moderate/Severe = MUST substitute
+       - Prefer compound movements for substitutes when possible
+       - Include clear reasoning in the "substitutions" array explaining the pain-based swap
+       - Never ignore pain flags - user safety is paramount
+    5. Respect readiness flags:
        - Low energy or high soreness: cap RPE at 7.5, reduce backoffs by 1-2 sets
        - High energy + no soreness: allow 1 extra backoff or small load bump
-    5. For weight progressions:
+    6. For weight progressions:
        - Barbell compounds: +2.5kg when rep target hit at/below RPE cap
        - Dumbbells: +2kg (or next available increment)
        - If reps not hit, keep weight and aim for +1 rep
-    6. Always output valid JSON matching the provided schema exactly
-    7. Never add exercises not in the template unless absolutely necessary
+    7. Always output valid JSON matching the provided schema exactly
+    8. Never add exercises not in the template unless absolutely necessary
 
     Output JSON only. No markdown code fences, no explanations outside the JSON structure.
     """
 
     static let planPrompt = """
     Generate today's workout plan based on the context provided.
+
+    CRITICAL - Check for pain flags first:
+    1. Review all painFlags in the context
+    2. For each exercise in the template, check if it targets the affected body part
+    3. If pain flag severity is Moderate or Severe, MUST substitute the exercise
+    4. If severity is Mild, consider reducing load by 10-15% or substituting
+    5. SUBSTITUTION STRATEGY - Use exercises from different body parts:
+       - Upper body pain → substitute with leg exercises (squats, lunges, leg press)
+       - Leg pain → substitute with upper body (rows, pull-ups, lat pulldown)
+       - Never substitute shoulder pain with another shoulder exercise!
+    6. Document ALL substitutions in the "substitutions" array with clear reasoning
 
     For each exercise:
     1. Calculate warmup sets (typically 3-4 sets working up to top set weight)
@@ -472,6 +594,7 @@ enum CoachPrompts {
     6. For isolation exercises: 2-3 working sets
     7. Use the user's exercise history to suggest appropriate weights
     8. Order exercises: compounds first, then isolations
+    9. Include YouTube form tutorial URLs - prefer AthleanX videos when available
 
     Respond with valid JSON:
     {
@@ -487,12 +610,64 @@ enum CoachPrompts {
           "movementPattern": "string (one of: squat, hinge, lunge, horizontalPush, horizontalPull, verticalPush, verticalPull, carry, isolation, core)",
           "primaryMuscles": ["string (e.g., 'chest', 'back', 'quads', 'hamstrings', 'shoulders', 'biceps', 'triceps', 'glutes', 'calves', 'abs', 'forearms', 'traps', 'lats')"],
           "isCompound": boolean,
-          "equipmentRequired": ["string (e.g., 'barbell', 'dumbbell', 'cable', 'machine', 'bodyweight', 'bench', 'rack')"]
+          "equipmentRequired": ["string (e.g., 'barbell', 'dumbbell', 'cable', 'machine', 'bodyweight', 'bench', 'rack')"],
+          "youtubeVideoURL": "string or null (YouTube form tutorial URL, prefer AthleanX channel)"
         }
       ],
       "reasoning": "string (brief explanation of exercise selection)",
       "estimatedDuration": number (minutes),
       "focusAreas": ["string (muscle groups targeted)"]
+    }
+    """
+    
+    static let workoutPlanPrompt = """
+    Generate a complete multi-week workout plan based on the user's specifications.
+    
+    Guidelines:
+    1. Create a structured plan with appropriate progression
+    2. Include deload weeks if requested (typically every 4th week)
+    3. Match exercises to the user's available equipment
+    4. Use appropriate rep ranges for the goal:
+       - Strength: 3-6 reps, RPE 7-9
+       - Hypertrophy: 8-12 reps, RPE 7-8.5
+       - Both: Mix of both ranges across exercises
+    5. Structure workouts based on the split:
+       - Upper/Lower: Upper A, Lower A, Upper B, Lower B
+       - PPL: Push, Pull, Legs (repeated)
+       - Full Body: Full Body A, B, C
+    6. Include compound movements first, then accessories
+    7. Balance push/pull movements
+    8. Focus extra volume on requested muscle groups
+    
+    Respond with valid JSON:
+    {
+      "planName": "string (descriptive name based on goal and duration)",
+      "description": "string (brief description of the program focus)",
+      "weeks": [
+        {
+          "weekNumber": number,
+          "weekType": "regular" | "deload" | "peak" | "test",
+          "workouts": [
+            {
+              "dayNumber": number (1-7),
+              "name": "string (e.g., 'Upper A', 'Push Day')",
+              "exercises": [
+                {
+                  "exerciseName": "string",
+                  "sets": number,
+                  "repsMin": number,
+                  "repsMax": number,
+                  "rpe": number or null,
+                  "notes": "string or null"
+                }
+              ],
+              "targetDuration": number (minutes)
+            }
+          ],
+          "weekNotes": "string or null (coaching cues for the week)"
+        }
+      ],
+      "coachingNotes": "string (overall program guidance)"
     }
     """
 }

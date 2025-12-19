@@ -318,6 +318,7 @@ struct PainFlagSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     let exercise: Exercise
+    var onPainFlagged: ((PainFlag) -> Void)? = nil
 
     @State private var bodyPart: BodyPart = .chest
     @State private var severity: PainSeverity = .mild
@@ -366,6 +367,10 @@ struct PainFlagSheet: View {
                         )
                         modelContext.insert(flag)
                         try? modelContext.save()
+
+                        // Notify the workout view
+                        onPainFlagged?(flag)
+
                         dismiss()
                     }
                 }

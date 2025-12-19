@@ -4,10 +4,12 @@ import SwiftData
 struct WorkoutView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.scenePhase) private var scenePhase
     @Query private var userProfiles: [UserProfile]
 
     let template: WorkoutTemplate
     let plan: TodayPlanResponse?
+    var resumingFrom: PausedWorkout?
 
     @State private var currentExerciseIndex = 0
     @State private var workoutStartTime = Date()
@@ -15,9 +17,15 @@ struct WorkoutView: View {
     @State private var restTimeRemaining: Int = 180
     @State private var showSummary = false
     @State private var showPainFlagSheet = false
+    @State private var showPauseConfirmation = false
     @State private var session: WorkoutSession?
 
     @State private var exerciseSets: [UUID: [WorkoutSet]] = [:]
+
+    // Pain flag handling
+    @State private var showSubstitutionAlert = false
+    @State private var painFlaggedExercise: (flag: PainFlag, exercise: Exercise)?
+    @State private var suggestedSubstitute: String?
 
     private var profile: UserProfile? { userProfiles.first }
     private var unitSystem: UnitSystem { profile?.unitSystem ?? .metric }
@@ -58,6 +66,7 @@ struct WorkoutView: View {
                                 exercise: exercise,
                                 templateExercise: templateExercise,
                                 planData: plan?.exercises.first { $0.exerciseName == exercise.name },
+                                showYouTubeLinks: profile?.showYouTubeLinks ?? true,
                                 onPainFlagTapped: {
                                     showPainFlagSheet = true
                                 }
@@ -106,9 +115,34 @@ struct WorkoutView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
+                    Button {
+                        showPauseConfirmation = true
+                    } label: {
+                        Image(systemName: "pause.circle")
+                    }
+                }
+                ToolbarItem(placement: .primaryAction) {
                     Button("End") {
                         showSummary = true
                     }
+                }
+            }
+            .confirmationDialog("Pause Workout?", isPresented: $showPauseConfirmation, titleVisibility: .visible) {
+                Button("Pause") {
+                    pauseWorkout()
+                }
+                Button("Discard & Exit", role: .destructive) {
+                    clearPausedWorkout()
+                    dismiss()
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Your progress will be saved automatically. You can resume from the Home screen.")
+            }
+            .onChange(of: scenePhase) { oldPhase, newPhase in
+                if newPhase == .background || newPhase == .inactive {
+                    // Auto-save when app goes to background
+                    savePausedState()
                 }
             }
             .sheet(isPresented: $showRestTimer) {
@@ -132,14 +166,58 @@ struct WorkoutView: View {
             }
             .sheet(isPresented: $showPainFlagSheet) {
                 if let exercise = currentExercise {
-                    PainFlagSheet(exercise: exercise)
-                        .presentationDetents([.medium])
+                    PainFlagSheet(exercise: exercise) { painFlag in
+                        handlePainFlagged(painFlag: painFlag, exercise: exercise)
+                    }
+                    .presentationDetents([.medium])
+                }
+            }
+            .alert("Exercise Substitution", isPresented: $showSubstitutionAlert) {
+                Button("Skip Exercise", role: .destructive) {
+                    skipCurrentExercise()
+                }
+                if let substitute = suggestedSubstitute {
+                    Button("Switch to \(substitute)") {
+                        substituteCurrentExercise(with: substitute)
+                    }
+                }
+                Button("Continue Anyway", role: .cancel) {
+                    // User chooses to continue with the painful exercise
+                }
+            } message: {
+                if let (flag, exercise) = painFlaggedExercise {
+                    Text("You flagged \(flag.severity.rawValue) pain in your \(flag.bodyPart.rawValue) during \(exercise.name). Would you like to substitute this exercise?")
                 }
             }
             .onAppear {
-                initializeWorkout()
+                if let paused = resumingFrom {
+                    resumeWorkout(from: paused)
+                } else {
+                    initializeWorkout()
+                }
             }
         }
+    }
+
+    private func resumeWorkout(from paused: PausedWorkout) {
+        workoutStartTime = paused.startedAt
+        currentExerciseIndex = paused.currentExerciseIndex
+
+        // Restore sets from snapshots
+        let snapshots = paused.exerciseSets
+        for (exerciseId, setSnapshots) in snapshots {
+            // Find the exercise
+            let exercise = template.sortedExercises
+                .compactMap { $0.exercise }
+                .first { $0.id == exerciseId }
+
+            let restoredSets = setSnapshots.map { $0.toWorkoutSet(exercise: exercise) }
+            exerciseSets[exerciseId] = restoredSets
+        }
+
+        // Clear the paused workout since we're resuming
+        modelContext.delete(paused)
+        try? modelContext.save()
     }
 
     private func initializeWorkout() {
@@ -321,6 +399,9 @@ struct WorkoutView: View {
     }
 
     private func saveWorkout() {
+        // Clear any paused workout state
+        clearPausedWorkout()
+
         let session = WorkoutSession(
             template: template,
             date: workoutStartTime,
@@ -340,9 +421,174 @@ struct WorkoutView: View {
         }
 
         modelContext.insert(session)
+
+        // Update plan progress if there's an active plan
+        PlanProgressService.shared.recordCompletedWorkout(session: session, in: modelContext)
+
         try? modelContext.save()
 
         dismiss()
+    }
+
+    // MARK: - Pause/Resume
+
+    private func pauseWorkout() {
+        savePausedState()
+        dismiss()
+    }
+
+    private func savePausedState() {
+        // Save even if no sets are completed - user may want to resume from where they left off
+        // We only skip if there are literally no sets initialized
+        let hasAnySets = !exerciseSets.isEmpty
+
+        // Convert WorkoutSets to snapshots
+        var snapshots: [UUID: [SetSnapshot]] = [:]
+        for (exerciseId, sets) in exerciseSets {
+            snapshots[exerciseId] = sets.map { SetSnapshot(from: $0) }
+        }
+
+        // Check if we already have a paused workout for this template
+        let templateId = template.id
+        let descriptor = FetchDescriptor<PausedWorkout>(
+            predicate: #Predicate { $0.template?.id == templateId }
+        )
+
+        do {
+            let existing = try modelContext.fetch(descriptor)
+            // Remove any existing paused workout for this template
+            for paused in existing {
+                modelContext.delete(paused)
+            }
+        } catch {
+            print("Error fetching existing paused workouts: \(error)")
+        }
+
+        // Only save if we have some state to preserve
+        guard hasAnySets else {
+            print("⏸️ No sets to save, skipping pause save")
+            return
+        }
+
+        // Create new paused workout
+        let paused = PausedWorkout(
+            template: template,
+            pausedAt: Date(),
+            startedAt: workoutStartTime,
+            currentExerciseIndex: currentExerciseIndex,
+            exerciseSets: snapshots,
+            plan: plan
+        )
+
+        modelContext.insert(paused)
+        
+        do {
+            try modelContext.save()
+            print("⏸️ Paused workout saved successfully for template: \(template.name)")
+        } catch {
+            print("⏸️ Error saving paused workout: \(error)")
+        }
+    }
+
+    private func clearPausedWorkout() {
+        let templateId = template.id
+        let descriptor = FetchDescriptor<PausedWorkout>(
+            predicate: #Predicate { $0.template?.id == templateId }
+        )
+
+        do {
+            let existing = try modelContext.fetch(descriptor)
+            for paused in existing {
+                modelContext.delete(paused)
+            }
+            try modelContext.save()
+        } catch {
+            print("Error clearing paused workout: \(error)")
+        }
+    }
+
+    // MARK: - Pain Flag Handling
+
+    private func handlePainFlagged(painFlag: PainFlag, exercise: Exercise) {
+        painFlaggedExercise = (painFlag, exercise)
+
+        // Find a substitute using the offline substitution engine
+        Task {
+            let painContext = PainFlagContext(
+                exerciseName: exercise.name,
+                bodyPart: painFlag.bodyPart.rawValue,
+                severity: painFlag.severity.rawValue
+            )
+
+            let offlineEngine = OfflineProgressionEngine()
+            if let (substitute, _) = await offlineEngine.checkIfNeedsSubstitution(
+                exerciseName: exercise.name,
+                painFlags: [painContext]
+            ) {
+                await MainActor.run {
+                    suggestedSubstitute = substitute
+                    showSubstitutionAlert = true
+                }
+            } else {
+                // No substitute found, just show skip option
+                await MainActor.run {
+                    suggestedSubstitute = nil
+                    showSubstitutionAlert = true
+                }
+            }
+        }
+    }
+
+    private func skipCurrentExercise() {
+        // Move to next exercise
+        if currentExerciseIndex < totalExercises - 1 {
+            currentExerciseIndex += 1
+        } else {
+            // Last exercise, show summary
+            showSummary = true
+        }
+    }
+
+    private func substituteCurrentExercise(with substituteName: String) {
+        // Find or create the substitute exercise
+        guard let currentTemplateEx = currentTemplateExercise else { return }
+
+        // Query all exercises to find the substitute
+        let descriptor = FetchDescriptor<Exercise>(
+            predicate: #Predicate { $0.name == substituteName }
+        )
+
+        do {
+            let exercises = try modelContext.fetch(descriptor)
+
+            if let substituteExercise = exercises.first {
+                // Create sets for the substitute exercise using the same prescription
+                var sets: [WorkoutSet] = []
+                let prescription = currentTemplateEx.prescription
+
+                // Create working sets for the substitute
+                for i in 0..<prescription.workingSets {
+                    let set = WorkoutSet(
+                        exercise: substituteExercise,
+                        setType: .working,
+                        weight: 0, // User will input weight
+                        targetReps: prescription.topSetRepsMin,
+                        targetRPE: prescription.topSetRPECap,
+                        orderIndex: i
+                    )
+                    sets.append(set)
+                }
+
+                exerciseSets[substituteExercise.id] = sets
+
+                // Update the current template exercise to point to the substitute
+                // Note: This is a temporary in-memory substitution
+                // The actual template remains unchanged
+                currentTemplateEx.exercise = substituteExercise
+            }
+        } catch {
+            print("Error fetching substitute exercise: \(error)")
+        }
     }
 }
 
@@ -391,7 +637,10 @@ struct ExerciseHeader: View {
     let exercise: Exercise
     let templateExercise: ExerciseTemplate
     let planData: PlannedExerciseResponse?
+    let showYouTubeLinks: Bool
     var onPainFlagTapped: (() -> Void)?
+    
+    @State private var showFormTips = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -400,6 +649,19 @@ struct ExerciseHeader: View {
                     .font(.title2.bold())
                 
                 Spacer()
+                
+                // Form tips info button
+                if exercise.hasFormGuidance || exercise.youtubeVideoURL != nil {
+                    Button {
+                        showFormTips = true
+                    } label: {
+                        Image(systemName: "info.circle")
+                            .font(.title3)
+                            .foregroundStyle(.blue)
+                    }
+                    .buttonStyle(.bordered)
+                    .buttonBorderShape(.circle)
+                }
                 
                 // Pain flag button
                 Button {
@@ -430,6 +692,10 @@ struct ExerciseHeader: View {
         .padding()
         .background(Color(.systemGray6))
         .clipShape(RoundedRectangle(cornerRadius: 12))
+        .sheet(isPresented: $showFormTips) {
+            FormTipsSheet(exercise: exercise, showYouTubeLinks: showYouTubeLinks)
+                .presentationDetents([.medium, .large])
+        }
     }
 }
 
@@ -722,6 +988,144 @@ struct ExerciseNavigation: View {
             }
         }
         .padding(.top)
+    }
+}
+
+// MARK: - Form Tips Sheet
+
+struct FormTipsSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    let exercise: Exercise
+    let showYouTubeLinks: Bool
+    
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    // Exercise name header
+                    HStack {
+                        Image(systemName: "figure.strengthtraining.traditional")
+                            .font(.title)
+                            .foregroundStyle(.blue)
+                        Text(exercise.name)
+                            .font(.title2.bold())
+                    }
+                    .padding(.bottom, 4)
+                    
+                    // Form Cues Section
+                    if !exercise.formCues.isEmpty {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Label("Key Form Cues", systemImage: "checkmark.circle.fill")
+                                .font(.headline)
+                                .foregroundStyle(.green)
+                            
+                            ForEach(exercise.formCues, id: \.self) { cue in
+                                HStack(alignment: .top, spacing: 10) {
+                                    Image(systemName: "arrow.right.circle.fill")
+                                        .foregroundStyle(.green.opacity(0.7))
+                                        .font(.subheadline)
+                                    Text(cue)
+                                        .font(.body)
+                                }
+                            }
+                        }
+                        .padding()
+                        .background(Color.green.opacity(0.1))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                    
+                    // Common Mistakes Section
+                    if !exercise.commonMistakes.isEmpty {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Label("Common Mistakes to Avoid", systemImage: "exclamationmark.triangle.fill")
+                                .font(.headline)
+                                .foregroundStyle(.orange)
+                            
+                            ForEach(exercise.commonMistakes, id: \.self) { mistake in
+                                HStack(alignment: .top, spacing: 10) {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .foregroundStyle(.orange.opacity(0.7))
+                                        .font(.subheadline)
+                                    Text(mistake)
+                                        .font(.body)
+                                }
+                            }
+                        }
+                        .padding()
+                        .background(Color.orange.opacity(0.1))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                    
+                    // YouTube Video Link Section
+                    if showYouTubeLinks, let videoURL = exercise.youtubeVideoURL, let url = URL(string: videoURL) {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Label("Video Tutorial", systemImage: "play.rectangle.fill")
+                                .font(.headline)
+                                .foregroundStyle(.red)
+                            
+                            Link(destination: url) {
+                                HStack {
+                                    Image(systemName: "play.circle.fill")
+                                        .font(.title2)
+                                    VStack(alignment: .leading) {
+                                        Text("Watch Form Guide")
+                                            .font(.subheadline.bold())
+                                        Text("AthleanX on YouTube")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                    Image(systemName: "arrow.up.right.square")
+                                        .font(.title3)
+                                }
+                                .padding()
+                                .background(Color.red.opacity(0.1))
+                                .clipShape(RoundedRectangle(cornerRadius: 10))
+                            }
+                            .foregroundStyle(.red)
+                        }
+                        .padding()
+                        .background(Color(.systemGray6))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                    
+                    // Instructions (if available)
+                    if let instructions = exercise.instructions, !instructions.isEmpty {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Label("Notes", systemImage: "note.text")
+                                .font(.headline)
+                                .foregroundStyle(.secondary)
+                            
+                            Text(instructions)
+                                .font(.body)
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding()
+                        .background(Color(.systemGray6))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                    
+                    // Empty state
+                    if exercise.formCues.isEmpty && exercise.commonMistakes.isEmpty && exercise.youtubeVideoURL == nil {
+                        ContentUnavailableView(
+                            "No Form Tips Available",
+                            systemImage: "info.circle",
+                            description: Text("Form guidance for this exercise hasn't been added yet.")
+                        )
+                    }
+                }
+                .padding()
+            }
+            .navigationTitle("Form Tips")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
+        }
     }
 }
 

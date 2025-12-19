@@ -15,7 +15,10 @@ struct StrengthTrackerApp: App {
                 WorkoutTemplate.self,
                 WorkoutSession.self,
                 WorkoutSet.self,
-                PainFlag.self
+                PainFlag.self,
+                PausedWorkout.self,
+                WorkoutPlan.self,
+                PlanWeek.self
             ])
             
             let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)

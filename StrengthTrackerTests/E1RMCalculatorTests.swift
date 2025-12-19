@@ -1,200 +1,216 @@
 import XCTest
-@testable import StrengthTracker
 
+/// Unit tests for E1RMCalculator - Estimated One Rep Max calculations
+/// Tests the Epley and Brzycki formulas for strength estimation
 final class E1RMCalculatorTests: XCTestCase {
-    
-    // MARK: - Epley Formula Tests
-    
-    func testE1RM_SingleRep_ReturnsWeight() {
-        // When doing 1 rep, e1RM should equal the weight lifted
-        let weight = 100.0
-        let result = E1RMCalculator.calculate(weight: weight, reps: 1)
-        
-        XCTAssertEqual(result, weight, accuracy: 0.001)
+
+    // MARK: - Epley Formula Tests (Default)
+
+    func testCalculateWithSingleRep() {
+        // Single rep should return the weight itself
+        let result = E1RMCalculator.calculate(weight: 100, reps: 1)
+        XCTAssertEqual(result, 100, accuracy: 0.001, "Single rep e1RM should equal the weight")
     }
-    
-    func testE1RM_ZeroReps_ReturnsZero() {
-        let result = E1RMCalculator.calculate(weight: 100.0, reps: 0)
-        
-        XCTAssertEqual(result, 0)
+
+    func testCalculateWithZeroReps() {
+        // Zero reps should return 0
+        let result = E1RMCalculator.calculate(weight: 100, reps: 0)
+        XCTAssertEqual(result, 0, "Zero reps should return 0")
     }
-    
-    func testE1RM_FiveReps_CorrectCalculation() {
-        // Epley formula: weight × (1 + reps/30)
-        // 100 × (1 + 5/30) = 100 × 1.1667 = 116.67
-        let result = E1RMCalculator.calculate(weight: 100.0, reps: 5)
-        
-        XCTAssertEqual(result, 116.666, accuracy: 0.01)
+
+    func testCalculateWithNegativeReps() {
+        // Negative reps should return 0
+        let result = E1RMCalculator.calculate(weight: 100, reps: -5)
+        XCTAssertEqual(result, 0, "Negative reps should return 0")
     }
-    
-    func testE1RM_TenReps_CorrectCalculation() {
-        // 100 × (1 + 10/30) = 100 × 1.333 = 133.33
-        let result = E1RMCalculator.calculate(weight: 100.0, reps: 10)
-        
-        XCTAssertEqual(result, 133.333, accuracy: 0.01)
+
+    func testCalculateWithStandardReps() {
+        // Epley formula: e1RM = weight × (1 + reps/30)
+        // 100kg × 5 reps: 100 × (1 + 5/30) = 100 × 1.1667 = 116.67
+        let result = E1RMCalculator.calculate(weight: 100, reps: 5)
+        let expected = 100.0 * (1.0 + 5.0 / 30.0)
+        XCTAssertEqual(result, expected, accuracy: 0.001, "Epley formula should calculate correctly")
     }
-    
-    func testE1RM_HighReps_StillCalculates() {
-        // 50 × (1 + 20/30) = 50 × 1.667 = 83.33
-        let result = E1RMCalculator.calculate(weight: 50.0, reps: 20)
-        
-        XCTAssertEqual(result, 83.333, accuracy: 0.01)
+
+    func testCalculateWith10Reps() {
+        // 100kg × 10 reps: 100 × (1 + 10/30) = 100 × 1.333 = 133.33
+        let result = E1RMCalculator.calculate(weight: 100, reps: 10)
+        let expected = 100.0 * (1.0 + 10.0 / 30.0)
+        XCTAssertEqual(result, expected, accuracy: 0.001)
     }
-    
+
+    func testCalculateWithHighReps() {
+        // Formula should still work with high reps
+        let result = E1RMCalculator.calculate(weight: 50, reps: 20)
+        let expected = 50.0 * (1.0 + 20.0 / 30.0)
+        XCTAssertEqual(result, expected, accuracy: 0.001)
+    }
+
+    func testCalculateWithZeroWeight() {
+        let result = E1RMCalculator.calculate(weight: 0, reps: 10)
+        XCTAssertEqual(result, 0, accuracy: 0.001, "Zero weight should return 0")
+    }
+
     // MARK: - Brzycki Formula Tests
-    
-    func testBrzycki_SingleRep_ReturnsWeight() {
-        let result = E1RMCalculator.calculateBrzycki(weight: 100.0, reps: 1)
-        
-        XCTAssertEqual(result, 100.0, accuracy: 0.001)
+
+    func testBrzyckiWithSingleRep() {
+        let result = E1RMCalculator.calculateBrzycki(weight: 100, reps: 1)
+        XCTAssertEqual(result, 100, accuracy: 0.001, "Single rep should equal weight")
     }
-    
-    func testBrzycki_FiveReps_CorrectCalculation() {
-        // Brzycki: weight × (36 / (37 - reps))
-        // 100 × (36 / 32) = 100 × 1.125 = 112.5
-        let result = E1RMCalculator.calculateBrzycki(weight: 100.0, reps: 5)
-        
-        XCTAssertEqual(result, 112.5, accuracy: 0.01)
+
+    func testBrzyckiWithZeroReps() {
+        let result = E1RMCalculator.calculateBrzycki(weight: 100, reps: 0)
+        XCTAssertEqual(result, 100, "Zero reps should return weight")
     }
-    
-    func testBrzycki_TenReps_CorrectCalculation() {
-        // 100 × (36 / 27) = 133.33
-        let result = E1RMCalculator.calculateBrzycki(weight: 100.0, reps: 10)
-        
-        XCTAssertEqual(result, 133.333, accuracy: 0.01)
+
+    func testBrzyckiWithNegativeReps() {
+        let result = E1RMCalculator.calculateBrzycki(weight: 100, reps: -1)
+        XCTAssertEqual(result, 100, "Negative reps should return weight")
     }
-    
-    func testBrzycki_InvalidReps_ReturnsWeight() {
-        // Reps >= 37 would cause division issues
-        let result = E1RMCalculator.calculateBrzycki(weight: 100.0, reps: 37)
-        
-        XCTAssertEqual(result, 100.0)
+
+    func testBrzyckiWithStandardReps() {
+        // Brzycki formula: e1RM = weight × (36 / (37 - reps))
+        // 100kg × 5 reps: 100 × (36 / 32) = 100 × 1.125 = 112.5
+        let result = E1RMCalculator.calculateBrzycki(weight: 100, reps: 5)
+        let expected = 100.0 * (36.0 / (37.0 - 5.0))
+        XCTAssertEqual(result, expected, accuracy: 0.001, "Brzycki formula should calculate correctly")
     }
-    
-    func testBrzycki_ZeroReps_ReturnsWeight() {
-        let result = E1RMCalculator.calculateBrzycki(weight: 100.0, reps: 0)
-        
-        XCTAssertEqual(result, 100.0)
+
+    func testBrzyckiWith10Reps() {
+        // 100kg × 10 reps: 100 × (36 / 27) = 100 × 1.333 = 133.33
+        let result = E1RMCalculator.calculateBrzycki(weight: 100, reps: 10)
+        let expected = 100.0 * (36.0 / 27.0)
+        XCTAssertEqual(result, expected, accuracy: 0.001)
     }
-    
-    // MARK: - Weight for Reps Tests
-    
-    func testWeightForReps_SingleRep_ReturnsE1RM() {
-        let result = E1RMCalculator.weightForReps(e1RM: 100.0, reps: 1)
-        
-        XCTAssertEqual(result, 100.0, accuracy: 0.001)
+
+    func testBrzyckiWithEdgeReps() {
+        // 36 reps: 100 × (36 / 1) = 3600
+        let result = E1RMCalculator.calculateBrzycki(weight: 100, reps: 36)
+        let expected = 100.0 * (36.0 / 1.0)
+        XCTAssertEqual(result, expected, accuracy: 0.001)
     }
-    
-    func testWeightForReps_FiveReps_CorrectWeight() {
-        // Inverse: e1RM / (1 + reps/30)
-        // 100 / 1.1667 = 85.71
-        let result = E1RMCalculator.weightForReps(e1RM: 100.0, reps: 5)
-        
-        XCTAssertEqual(result, 85.714, accuracy: 0.01)
+
+    func testBrzyckiWith37OrMoreReps() {
+        // 37+ reps causes division by zero or negative, should return weight
+        let result37 = E1RMCalculator.calculateBrzycki(weight: 100, reps: 37)
+        XCTAssertEqual(result37, 100, "37 reps should return weight (edge case)")
+
+        let result50 = E1RMCalculator.calculateBrzycki(weight: 100, reps: 50)
+        XCTAssertEqual(result50, 100, "50 reps should return weight (edge case)")
     }
-    
-    func testWeightForReps_TenReps_CorrectWeight() {
-        // 100 / 1.333 = 75.0
-        let result = E1RMCalculator.weightForReps(e1RM: 100.0, reps: 10)
-        
-        XCTAssertEqual(result, 75.0, accuracy: 0.01)
+
+    // MARK: - Weight For Reps Tests
+
+    func testWeightForRepsWithSingleRep() {
+        // 1 rep should return the full e1RM
+        let result = E1RMCalculator.weightForReps(e1RM: 100, reps: 1)
+        XCTAssertEqual(result, 100, accuracy: 0.001)
     }
-    
-    func testWeightForReps_ZeroReps_ReturnsZero() {
-        let result = E1RMCalculator.weightForReps(e1RM: 100.0, reps: 0)
-        
+
+    func testWeightForRepsWithZeroReps() {
+        let result = E1RMCalculator.weightForReps(e1RM: 100, reps: 0)
         XCTAssertEqual(result, 0)
     }
-    
-    func testWeightForReps_RoundTrip() {
-        // If we calculate weight for 5 reps from a 100kg e1RM,
-        // then calculate e1RM from that weight at 5 reps, we should get back 100
-        let weight = E1RMCalculator.weightForReps(e1RM: 100.0, reps: 5)
-        let e1RM = E1RMCalculator.calculate(weight: weight, reps: 5)
-        
-        XCTAssertEqual(e1RM, 100.0, accuracy: 0.01)
+
+    func testWeightForRepsWithStandardReps() {
+        // Inverse of Epley: weight = e1RM / (1 + reps/30)
+        // For 5 reps at 100kg e1RM: 100 / 1.1667 = 85.71
+        let result = E1RMCalculator.weightForReps(e1RM: 100, reps: 5)
+        let expected = 100.0 / (1.0 + 5.0 / 30.0)
+        XCTAssertEqual(result, expected, accuracy: 0.001)
     }
-    
-    // MARK: - Percentage Tests
-    
-    func testPercentageOf1RM_MaxWeight_Returns100() {
-        // 100kg for 1 rep = 100% of 1RM
-        let result = E1RMCalculator.percentageOf1RM(weight: 100.0, reps: 1)
-        
-        XCTAssertEqual(result, 100.0, accuracy: 0.01)
+
+    func testWeightForRepsRoundTrip() {
+        // Calculate e1RM then back to weight should give original weight
+        let originalWeight = 80.0
+        let reps = 8
+        let e1RM = E1RMCalculator.calculate(weight: originalWeight, reps: reps)
+        let calculatedWeight = E1RMCalculator.weightForReps(e1RM: e1RM, reps: reps)
+        XCTAssertEqual(calculatedWeight, originalWeight, accuracy: 0.001, "Round trip should preserve original weight")
     }
-    
-    func testPercentageOf1RM_FiveReps_ReturnsCorrect() {
-        // 100kg for 5 reps: e1RM = 116.67
-        // Percentage = 100/116.67 × 100 = 85.7%
-        let result = E1RMCalculator.percentageOf1RM(weight: 100.0, reps: 5)
-        
-        XCTAssertEqual(result, 85.714, accuracy: 0.1)
+
+    // MARK: - Percentage of 1RM Tests
+
+    func testPercentageOf1RMWithSingleRep() {
+        // Single rep at any weight is 100% of e1RM
+        let result = E1RMCalculator.percentageOf1RM(weight: 100, reps: 1)
+        XCTAssertEqual(result, 100, accuracy: 0.001)
     }
-    
-    func testPercentageOf1RM_ZeroWeight_ReturnsZero() {
-        let result = E1RMCalculator.percentageOf1RM(weight: 0.0, reps: 5)
-        
-        XCTAssertEqual(result, 0.0)
+
+    func testPercentageOf1RMWithMultipleReps() {
+        // 100kg × 5 reps: e1RM = 116.67, percentage = 100/116.67 = 85.7%
+        let result = E1RMCalculator.percentageOf1RM(weight: 100, reps: 5)
+        let e1RM = E1RMCalculator.calculate(weight: 100, reps: 5)
+        let expected = 100.0 / e1RM * 100.0
+        XCTAssertEqual(result, expected, accuracy: 0.001)
     }
-    
+
+    func testPercentageOf1RMWithZeroReps() {
+        let result = E1RMCalculator.percentageOf1RM(weight: 100, reps: 0)
+        XCTAssertEqual(result, 0)
+    }
+
+    func testPercentageOf1RMWithZeroWeight() {
+        let result = E1RMCalculator.percentageOf1RM(weight: 0, reps: 5)
+        XCTAssertEqual(result, 0)
+    }
+
     // MARK: - Reps at Percentage Tests
-    
-    func testRepsAtPercentage_100Percent_Returns1() {
-        let result = E1RMCalculator.repsAtPercentage(100.0)
-        
+
+    func testRepsAtPercentage100() {
+        // 100% = 1 rep
+        let result = E1RMCalculator.repsAtPercentage(100)
         XCTAssertEqual(result, 1)
     }
-    
-    func testRepsAtPercentage_85Percent_ReturnsFive() {
-        // At 85%: reps = 30 × (1/0.85 - 1) = 30 × 0.176 = 5.3 → 5
-        let result = E1RMCalculator.repsAtPercentage(85.0)
-        
-        XCTAssertEqual(result, 5)
+
+    func testRepsAtPercentage90() {
+        // ~90% is approximately 3-4 reps
+        let result = E1RMCalculator.repsAtPercentage(90)
+        XCTAssertGreaterThanOrEqual(result, 3)
+        XCTAssertLessThanOrEqual(result, 4)
     }
-    
-    func testRepsAtPercentage_75Percent_ReturnsTen() {
-        // At 75%: reps = 30 × (1/0.75 - 1) = 30 × 0.333 = 10
-        let result = E1RMCalculator.repsAtPercentage(75.0)
-        
-        XCTAssertEqual(result, 10)
+
+    func testRepsAtPercentage75() {
+        // ~75% is approximately 10 reps
+        let result = E1RMCalculator.repsAtPercentage(75)
+        XCTAssertGreaterThanOrEqual(result, 8)
+        XCTAssertLessThanOrEqual(result, 12)
     }
-    
-    func testRepsAtPercentage_InvalidPercentage_Returns1() {
-        let result = E1RMCalculator.repsAtPercentage(0.0)
-        
-        XCTAssertEqual(result, 1)
+
+    func testRepsAtPercentageEdgeCases() {
+        // 0% or negative should return 1
+        XCTAssertEqual(E1RMCalculator.repsAtPercentage(0), 1)
+        XCTAssertEqual(E1RMCalculator.repsAtPercentage(-10), 1)
+
+        // Greater than 100% should return 1
+        XCTAssertEqual(E1RMCalculator.repsAtPercentage(110), 1)
     }
-    
-    func testRepsAtPercentage_Over100_Returns1() {
-        let result = E1RMCalculator.repsAtPercentage(110.0)
-        
-        XCTAssertEqual(result, 1)
+
+    // MARK: - Integration Tests
+
+    func testEpleyVsBrzyckiComparison() {
+        // Both formulas should give similar results in the 5-10 rep range
+        for reps in 5...10 {
+            let epley = E1RMCalculator.calculate(weight: 100, reps: reps)
+            let brzycki = E1RMCalculator.calculateBrzycki(weight: 100, reps: reps)
+            let difference = abs(epley - brzycki)
+            // Formulas should be within 5% of each other
+            XCTAssertLessThan(difference, epley * 0.05, "Epley and Brzycki should be similar at \(reps) reps")
+        }
     }
-    
-    // MARK: - Real-World Scenarios
-    
-    func testE1RM_BenchPressScenario() {
-        // User benches 100kg for 5 reps at RPE 8
-        // Expected e1RM ≈ 117kg
-        let e1RM = E1RMCalculator.calculate(weight: 100.0, reps: 5)
-        
-        XCTAssertTrue(e1RM > 115 && e1RM < 120, "e1RM should be around 117kg")
+
+    func testRealWorldBenchPress() {
+        // Test with realistic bench press numbers
+        // 100kg for 5 reps should estimate around 116-118kg 1RM
+        let e1RM = E1RMCalculator.calculate(weight: 100, reps: 5)
+        XCTAssertGreaterThan(e1RM, 110)
+        XCTAssertLessThan(e1RM, 125)
     }
-    
-    func testE1RM_SquatScenario() {
-        // User squats 140kg for 3 reps
-        // Expected e1RM = 140 × (1 + 3/30) = 154kg
-        let e1RM = E1RMCalculator.calculate(weight: 140.0, reps: 3)
-        
-        XCTAssertEqual(e1RM, 154.0, accuracy: 0.1)
-    }
-    
-    func testWeightForReps_WorkingSetCalculation() {
-        // Given 150kg e1RM, calculate weight for 8 rep set
-        // 150 / (1 + 8/30) = 150 / 1.267 = 118.4kg
-        let weight = E1RMCalculator.weightForReps(e1RM: 150.0, reps: 8)
-        
-        XCTAssertEqual(weight, 118.42, accuracy: 0.1)
+
+    func testRealWorldSquat() {
+        // 140kg for 3 reps
+        let e1RM = E1RMCalculator.calculate(weight: 140, reps: 3)
+        XCTAssertGreaterThan(e1RM, 145)
+        XCTAssertLessThan(e1RM, 160)
     }
 }

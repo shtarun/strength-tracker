@@ -1,16 +1,37 @@
 import SwiftUI
 import SwiftData
+import Foundation
 
 struct ProfileView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var userProfiles: [UserProfile]
+    @Query(filter: #Predicate<WorkoutPlan> { $0.isActive == true }) private var activePlans: [WorkoutPlan]
 
     @State private var showEquipmentEditor = false
     @State private var showAPISettings = false
     @State private var showResetConfirmation = false
     @State private var showDataManagement = false
+    @State private var showPausePlanAlert = false
+    @State private var pendingGoalValue: Int?
 
     private var profile: UserProfile? { userProfiles.first }
+    private var activePlan: WorkoutPlan? { activePlans.first }
+
+    private func handleGoalChange(increment: Bool) {
+        guard let profile = profile else { return }
+        
+        let currentValue = profile.activeDaysGoal
+        let newValue = increment ? min(7, currentValue + 1) : max(1, currentValue - 1)
+        
+        guard newValue != currentValue else { return }
+        
+        if let plan = activePlan {
+            pendingGoalValue = newValue
+            showPausePlanAlert = true
+        } else {
+            profile.activeDaysGoal = newValue
+        }
+    }
 
     var body: some View {
         NavigationStack {
@@ -43,6 +64,20 @@ struct ProfileView: View {
                         )) {
                             ForEach(Split.allCases.filter { $0 != .custom }) { split in
                                 Text(split.rawValue).tag(split)
+                            }
+                        }
+
+                        VStack(alignment: .leading) {
+                            Stepper("Weekly Activity Goal: \(profile.activeDaysGoal) days", onIncrement: {
+                                handleGoalChange(increment: true)
+                            }, onDecrement: {
+                                handleGoalChange(increment: false)
+                            })
+                            
+                            if let plan = activePlan {
+                                Text("Active Plan: \(plan.name) (\(plan.workoutsPerWeek) days/week)")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
                             }
                         }
 
@@ -81,6 +116,11 @@ struct ProfileView: View {
                             get: { profile.defaultRestTime },
                             set: { profile.defaultRestTime = $0 }
                         ), in: 60...300, step: 15)
+                        
+                        Toggle("Show YouTube Form Videos", isOn: Binding(
+                            get: { profile.showYouTubeLinks },
+                            set: { profile.showYouTubeLinks = $0 }
+                        ))
                     }
 
                     // Equipment
@@ -162,6 +202,7 @@ struct ProfileView: View {
                 }
             }
             .navigationTitle("Profile")
+            .navigationBarTitleDisplayMode(.inline)
             .sheet(isPresented: $showEquipmentEditor) {
                 if let profile = profile {
                     EquipmentEditorSheet(equipment: profile.equipmentProfile ?? EquipmentProfile())
@@ -182,6 +223,22 @@ struct ProfileView: View {
                 }
             } message: {
                 Text("This will delete all your workout history and settings. This action cannot be undone.")
+            }
+            .alert("Pause Active Plan?", isPresented: $showPausePlanAlert) {
+                Button("Cancel", role: .cancel) {
+                    pendingGoalValue = nil
+                }
+                Button("Update & Pause", role: .destructive) {
+                    if let newValue = pendingGoalValue, let profile = profile, let plan = activePlan {
+                        profile.activeDaysGoal = newValue
+                        plan.isActive = false // Pause the plan
+                        pendingGoalValue = nil
+                    }
+                }
+            } message: {
+                if let plan = activePlan {
+                    Text("Changing your activity goal will pause your current plan '\(plan.name)'. You can resume it later from the Plans tab.")
+                }
             }
             .onChange(of: profile?.preferredLLMProvider) { _, newValue in
                 if let profile = profile {

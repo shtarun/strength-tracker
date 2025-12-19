@@ -63,6 +63,10 @@ struct Readiness: Codable, Equatable {
 
     static let `default` = Readiness(energy: .ok, soreness: .none, timeAvailable: 60)
 
+    var isDefault: Bool {
+        self == Readiness.default
+    }
+
     var shouldReduceIntensity: Bool {
         energy == .low || soreness == .high
     }

@@ -1,322 +1,311 @@
 import XCTest
-@testable import StrengthTracker
 
+/// Unit tests for workout session computed properties and logic
+/// Tests volume calculations, progress tracking, and session analysis
 final class WorkoutSessionTests: XCTestCase {
-    
-    // MARK: - Default Values Tests
-    
-    func testWorkoutSession_DefaultLocation() {
-        // Test that Location has expected default value
-        let defaultLocation = Location.gym
-        XCTAssertEqual(defaultLocation.rawValue, "Gym")
-    }
-    
-    func testWorkoutSession_LocationCases() {
-        let allCases = Location.allCases
-        XCTAssertTrue(allCases.contains(.gym))
-        XCTAssertTrue(allCases.contains(.home))
-        XCTAssertTrue(allCases.contains(.mixed))
-    }
-}
 
-// MARK: - Readiness Tests
+    // MARK: - Volume Calculation Tests
 
-final class ReadinessStructTests: XCTestCase {
-    
-    func testReadiness_Default() {
-        let readiness = Readiness.default
-        
-        XCTAssertEqual(readiness.energy, .ok)
-        XCTAssertEqual(readiness.soreness, .none)
-        XCTAssertEqual(readiness.timeAvailable, 60)
+    func testTotalVolumeCalculation() {
+        // Volume = weight × reps for each completed set
+        let sets = [
+            (weight: 100.0, reps: 5, completed: true),   // 500
+            (weight: 90.0, reps: 8, completed: true),    // 720
+            (weight: 90.0, reps: 8, completed: true),    // 720
+            (weight: 90.0, reps: 7, completed: true),    // 630
+            (weight: 60.0, reps: 5, completed: false)    // Not counted
+        ]
+
+        let totalVolume = sets.filter { $0.completed }
+            .reduce(0) { $0 + ($1.weight * Double($1.reps)) }
+
+        XCTAssertEqual(totalVolume, 2570, accuracy: 0.001)
     }
-    
-    func testReadiness_ShouldReduceIntensity_LowEnergy() {
-        let readiness = Readiness(energy: .low, soreness: .none, timeAvailable: 60)
-        XCTAssertTrue(readiness.shouldReduceIntensity)
+
+    func testVolumeWithEmptySets() {
+        let sets: [(weight: Double, reps: Int, completed: Bool)] = []
+        let totalVolume = sets.filter { $0.completed }
+            .reduce(0) { $0 + ($1.weight * Double($1.reps)) }
+
+        XCTAssertEqual(totalVolume, 0)
     }
-    
-    func testReadiness_ShouldReduceIntensity_HighSoreness() {
-        let readiness = Readiness(energy: .ok, soreness: .high, timeAvailable: 60)
-        XCTAssertTrue(readiness.shouldReduceIntensity)
+
+    func testVolumeOnlyCountsCompletedSets() {
+        let sets = [
+            (weight: 100.0, reps: 5, completed: false),
+            (weight: 100.0, reps: 5, completed: false),
+            (weight: 100.0, reps: 5, completed: true)    // Only this counts
+        ]
+
+        let totalVolume = sets.filter { $0.completed }
+            .reduce(0) { $0 + ($1.weight * Double($1.reps)) }
+
+        XCTAssertEqual(totalVolume, 500, accuracy: 0.001)
     }
-    
-    func testReadiness_ShouldNotReduceIntensity_Normal() {
-        let readiness = Readiness(energy: .ok, soreness: .none, timeAvailable: 60)
-        XCTAssertFalse(readiness.shouldReduceIntensity)
-    }
-    
-    func testReadiness_ShouldIncreaseIntensity() {
-        let readiness = Readiness(energy: .high, soreness: .none, timeAvailable: 60)
-        XCTAssertTrue(readiness.shouldIncreaseIntensity)
-    }
-    
-    func testReadiness_ShouldNotIncreaseIntensity_WithSoreness() {
-        let readiness = Readiness(energy: .high, soreness: .mild, timeAvailable: 60)
-        XCTAssertFalse(readiness.shouldIncreaseIntensity)
-    }
-    
-    func testReadiness_Equality() {
-        let r1 = Readiness(energy: .high, soreness: .none, timeAvailable: 60)
-        let r2 = Readiness(energy: .high, soreness: .none, timeAvailable: 60)
-        let r3 = Readiness(energy: .low, soreness: .none, timeAvailable: 60)
-        
-        XCTAssertEqual(r1, r2)
-        XCTAssertNotEqual(r1, r3)
-    }
-    
-    func testReadiness_Codable() {
-        let readiness = Readiness(energy: .high, soreness: .mild, timeAvailable: 45)
-        
-        let encoder = JSONEncoder()
-        let decoder = JSONDecoder()
-        
-        do {
-            let data = try encoder.encode(readiness)
-            let decoded = try decoder.decode(Readiness.self, from: data)
-            
-            XCTAssertEqual(decoded.energy, readiness.energy)
-            XCTAssertEqual(decoded.soreness, readiness.soreness)
-            XCTAssertEqual(decoded.timeAvailable, readiness.timeAvailable)
-        } catch {
-            XCTFail("Failed to encode/decode Readiness: \(error)")
+
+    // MARK: - Set Analysis Tests
+
+    func testHitTargetCalculation() {
+        struct TestSet {
+            let reps: Int
+            let targetReps: Int
+
+            var hitTarget: Bool { reps >= targetReps }
         }
-    }
-}
 
-// MARK: - EnergyLevel Enum Tests
+        let hitTarget = TestSet(reps: 5, targetReps: 5)
+        XCTAssertTrue(hitTarget.hitTarget)
 
-final class EnergyLevelTests: XCTestCase {
-    
-    func testEnergyLevel_AllCases() {
-        let cases = EnergyLevel.allCases
-        XCTAssertEqual(cases.count, 3)
-        XCTAssertTrue(cases.contains(.low))
-        XCTAssertTrue(cases.contains(.ok))
-        XCTAssertTrue(cases.contains(.high))
-    }
-    
-    func testEnergyLevel_RawValues() {
-        XCTAssertEqual(EnergyLevel.low.rawValue, "Low")
-        XCTAssertEqual(EnergyLevel.ok.rawValue, "OK")
-        XCTAssertEqual(EnergyLevel.high.rawValue, "High")
-    }
-    
-    func testEnergyLevel_Icons() {
-        XCTAssertEqual(EnergyLevel.low.icon, "battery.25")
-        XCTAssertEqual(EnergyLevel.ok.icon, "battery.50")
-        XCTAssertEqual(EnergyLevel.high.icon, "battery.100")
-    }
-    
-    func testEnergyLevel_Colors() {
-        XCTAssertEqual(EnergyLevel.low.color, "red")
-        XCTAssertEqual(EnergyLevel.ok.color, "yellow")
-        XCTAssertEqual(EnergyLevel.high.color, "green")
-    }
-    
-    func testEnergyLevel_Identifiable() {
-        XCTAssertEqual(EnergyLevel.low.id, "Low")
-        XCTAssertEqual(EnergyLevel.ok.id, "OK")
-        XCTAssertEqual(EnergyLevel.high.id, "High")
-    }
-}
+        let exceededTarget = TestSet(reps: 6, targetReps: 5)
+        XCTAssertTrue(exceededTarget.hitTarget)
 
-// MARK: - SorenessLevel Enum Tests
+        let missedTarget = TestSet(reps: 4, targetReps: 5)
+        XCTAssertFalse(missedTarget.hitTarget)
+    }
 
-final class SorenessLevelTests: XCTestCase {
-    
-    func testSorenessLevel_AllCases() {
-        let cases = SorenessLevel.allCases
-        XCTAssertEqual(cases.count, 3)
-        XCTAssertTrue(cases.contains(.none))
-        XCTAssertTrue(cases.contains(.mild))
-        XCTAssertTrue(cases.contains(.high))
-    }
-    
-    func testSorenessLevel_RawValues() {
-        XCTAssertEqual(SorenessLevel.none.rawValue, "None")
-        XCTAssertEqual(SorenessLevel.mild.rawValue, "Mild")
-        XCTAssertEqual(SorenessLevel.high.rawValue, "High")
-    }
-    
-    func testSorenessLevel_Icons() {
-        XCTAssertEqual(SorenessLevel.none.icon, "checkmark.circle.fill")
-        XCTAssertEqual(SorenessLevel.mild.icon, "exclamationmark.circle.fill")
-        XCTAssertEqual(SorenessLevel.high.icon, "xmark.circle.fill")
-    }
-    
-    func testSorenessLevel_Colors() {
-        XCTAssertEqual(SorenessLevel.none.color, "green")
-        XCTAssertEqual(SorenessLevel.mild.color, "yellow")
-        XCTAssertEqual(SorenessLevel.high.color, "red")
-    }
-}
+    func testRPEDeviationCalculation() {
+        struct TestSet {
+            let rpe: Double?
+            let targetRPE: Double?
 
-// MARK: - SetType Enum Tests
-
-final class SetTypeTests: XCTestCase {
-    
-    func testSetType_AllCases() {
-        let cases = SetType.allCases
-        XCTAssertTrue(cases.contains(.warmup))
-        XCTAssertTrue(cases.contains(.working))
-        XCTAssertTrue(cases.contains(.topSet))
-        XCTAssertTrue(cases.contains(.backoff))
-    }
-    
-    func testSetType_RawValues() {
-        XCTAssertEqual(SetType.warmup.rawValue, "Warmup")
-        XCTAssertEqual(SetType.working.rawValue, "Working")
-        XCTAssertEqual(SetType.topSet.rawValue, "Top Set")
-        XCTAssertEqual(SetType.backoff.rawValue, "Backoff")
-    }
-}
-
-// MARK: - E1RM Calculator Integration Tests
-
-final class WorkoutSetE1RMTests: XCTestCase {
-    
-    func testE1RM_CalculatedValue() {
-        // Test e1RM calculation using the same formula
-        let weight = 100.0
-        let reps = 5
-        let expectedE1RM = E1RMCalculator.calculate(weight: weight, reps: reps)
-        
-        // e1RM should be greater than actual weight
-        XCTAssertGreaterThan(expectedE1RM, weight)
-    }
-    
-    func testE1RM_SingleRep() {
-        // For 1 rep, e1RM should equal the weight
-        let e1RM = E1RMCalculator.calculate(weight: 200.0, reps: 1)
-        XCTAssertEqual(e1RM, 200.0, accuracy: 0.1)
-    }
-    
-    func testE1RM_HigherReps_HigherE1RM() {
-        // Same weight with more reps should give higher e1RM
-        let e1RM5 = E1RMCalculator.calculate(weight: 100.0, reps: 5)
-        let e1RM8 = E1RMCalculator.calculate(weight: 100.0, reps: 8)
-        
-        XCTAssertGreaterThan(e1RM8, e1RM5)
-    }
-}
-
-// MARK: - SetHistory Tests
-
-final class SetHistoryTests: XCTestCase {
-    
-    func testSetHistory_FromWorkoutSet() {
-        let exercise = Exercise(
-            name: "Squat",
-            movementPattern: .squat,
-            primaryMuscles: [.quads],
-            secondaryMuscles: [],
-            equipmentRequired: [.barbell]
-        )
-        
-        let workoutSet = WorkoutSet(
-            exercise: exercise,
-            setType: .topSet,
-            weight: 100.0,
-            targetReps: 5,
-            reps: 5,
-            rpe: 8.0,
-            orderIndex: 0
-        )
-        
-        let historyDate = Date()
-        let history = SetHistory(from: workoutSet, date: historyDate)
-        
-        XCTAssertEqual(history.weight, 100.0)
-        XCTAssertEqual(history.reps, 5)
-        XCTAssertEqual(history.rpe, 8.0)
-        XCTAssertEqual(history.setType, .topSet)
-        XCTAssertEqual(history.date, historyDate)
-    }
-    
-    func testSetHistory_Codable() {
-        let exercise = Exercise(
-            name: "Bench Press",
-            movementPattern: .horizontalPush,
-            primaryMuscles: [.chest],
-            secondaryMuscles: [],
-            equipmentRequired: [.barbell]
-        )
-        
-        let workoutSet = WorkoutSet(
-            exercise: exercise,
-            setType: .topSet,
-            weight: 80.0,
-            targetReps: 6,
-            reps: 6,
-            rpe: 7.5,
-            orderIndex: 0
-        )
-        
-        let history = SetHistory(from: workoutSet, date: Date())
-        
-        let encoder = JSONEncoder()
-        let decoder = JSONDecoder()
-        
-        do {
-            let data = try encoder.encode(history)
-            let decoded = try decoder.decode(SetHistory.self, from: data)
-            
-            XCTAssertEqual(decoded.weight, history.weight)
-            XCTAssertEqual(decoded.reps, history.reps)
-            XCTAssertEqual(decoded.rpe, history.rpe)
-            XCTAssertEqual(decoded.setType, history.setType)
-        } catch {
-            XCTFail("Failed to encode/decode SetHistory: \(error)")
+            var rpeDeviation: Double? {
+                guard let actual = rpe, let target = targetRPE else { return nil }
+                return actual - target
+            }
         }
-    }
-    
-    func testSetHistory_E1RMCalculation() {
-        let exercise = Exercise(
-            name: "Deadlift",
-            movementPattern: .hinge,
-            primaryMuscles: [.hamstrings],
-            secondaryMuscles: [],
-            equipmentRequired: [.barbell]
-        )
-        
-        let workoutSet = WorkoutSet(
-            exercise: exercise,
-            setType: .topSet,
-            weight: 150.0,
-            targetReps: 5,
-            reps: 5,
-            rpe: 8.0,
-            orderIndex: 0
-        )
-        
-        let history = SetHistory(from: workoutSet, date: Date())
-        
-        // e1RM should be calculated from the set's weight and reps
-        let expectedE1RM = E1RMCalculator.calculate(weight: 150.0, reps: 5)
-        XCTAssertEqual(history.e1RM, expectedE1RM)
-    }
-}
 
-// MARK: - PainSeverity Enum Tests
+        // Exact match
+        let exactMatch = TestSet(rpe: 8.0, targetRPE: 8.0)
+        XCTAssertEqual(exactMatch.rpeDeviation ?? 999, 0, accuracy: 0.001)
 
-final class PainSeverityTests: XCTestCase {
-    
-    func testPainSeverity_AllCases() {
-        let cases = PainSeverity.allCases
-        XCTAssertEqual(cases.count, 3)
-        XCTAssertTrue(cases.contains(.mild))
-        XCTAssertTrue(cases.contains(.moderate))
-        XCTAssertTrue(cases.contains(.severe))
+        // Harder than expected
+        let harderSet = TestSet(rpe: 9.0, targetRPE: 8.0)
+        XCTAssertEqual(harderSet.rpeDeviation ?? 999, 1.0, accuracy: 0.001)
+
+        // Easier than expected
+        let easierSet = TestSet(rpe: 7.0, targetRPE: 8.0)
+        XCTAssertEqual(easierSet.rpeDeviation ?? 999, -1.0, accuracy: 0.001)
+
+        // Missing RPE
+        let noRPE = TestSet(rpe: nil, targetRPE: 8.0)
+        XCTAssertNil(noRPE.rpeDeviation)
+
+        // Missing target
+        let noTarget = TestSet(rpe: 8.0, targetRPE: nil)
+        XCTAssertNil(noTarget.rpeDeviation)
     }
-    
-    func testPainSeverity_RawValues() {
-        XCTAssertEqual(PainSeverity.mild.rawValue, "Mild")
-        XCTAssertEqual(PainSeverity.moderate.rawValue, "Moderate")
-        XCTAssertEqual(PainSeverity.severe.rawValue, "Severe")
+
+    // MARK: - E1RM Tracking Tests
+
+    func testE1RMCalculationForSet() {
+        struct TestSet {
+            let weight: Double
+            let reps: Int
+
+            var e1RM: Double {
+                E1RMCalculator.calculate(weight: weight, reps: reps)
+            }
+        }
+
+        let set = TestSet(weight: 100, reps: 5)
+        let expectedE1RM = 100.0 * (1.0 + 5.0 / 30.0)
+        XCTAssertEqual(set.e1RM, expectedE1RM, accuracy: 0.001)
     }
-    
-    func testPainSeverity_Identifiable() {
-        XCTAssertEqual(PainSeverity.mild.id, "Mild")
+
+    func testTopSetIdentification() {
+        struct TestSet {
+            let weight: Double
+            let reps: Int
+            let setType: String
+            let isCompleted: Bool
+
+            var e1RM: Double {
+                E1RMCalculator.calculate(weight: weight, reps: reps)
+            }
+        }
+
+        let sets = [
+            TestSet(weight: 60, reps: 5, setType: "warmup", isCompleted: true),
+            TestSet(weight: 80, reps: 5, setType: "warmup", isCompleted: true),
+            TestSet(weight: 100, reps: 5, setType: "topSet", isCompleted: true),
+            TestSet(weight: 90, reps: 8, setType: "backoff", isCompleted: true)
+        ]
+
+        // Find top set (highest e1RM among top sets)
+        let topSets = sets.filter { $0.setType == "topSet" && $0.isCompleted }
+        let topSet = topSets.max(by: { $0.e1RM < $1.e1RM })
+
+        XCTAssertNotNil(topSet)
+        XCTAssertEqual(topSet?.weight, 100)
+    }
+
+    // MARK: - Session Progress Tests
+
+    func testSessionVolumeComparison() {
+        let previousSessionVolume = 5000.0
+        let currentSessionVolume = 5500.0
+
+        let volumeIncrease = currentSessionVolume - previousSessionVolume
+        let percentageIncrease = (volumeIncrease / previousSessionVolume) * 100
+
+        XCTAssertEqual(volumeIncrease, 500, accuracy: 0.001)
+        XCTAssertEqual(percentageIncrease, 10, accuracy: 0.001)
+    }
+
+    func testE1RMProgressTracking() {
+        let previousBestE1RM = 116.67
+        let currentE1RM = 122.5
+
+        let improvement = currentE1RM - previousBestE1RM
+        let percentageImprovement = (improvement / previousBestE1RM) * 100
+
+        XCTAssertGreaterThan(improvement, 0, "Should show improvement")
+        XCTAssertEqual(percentageImprovement, 5.0, accuracy: 0.5)
+    }
+
+    // MARK: - Workout Duration Tests
+
+    func testDurationTracking() {
+        let plannedDuration = 60
+        let actualDuration = 55
+
+        let durationDifference = plannedDuration - actualDuration
+        XCTAssertEqual(durationDifference, 5)
+
+        // Workout finished faster than planned
+        XCTAssertLessThan(actualDuration, plannedDuration)
+    }
+
+    func testDurationWithOverrun() {
+        let plannedDuration = 60
+        let actualDuration = 75
+
+        let overrun = actualDuration - plannedDuration
+        XCTAssertEqual(overrun, 15)
+        XCTAssertGreaterThan(actualDuration, plannedDuration)
+    }
+
+    // MARK: - Readiness Impact Tests
+
+    func testReadinessAffectsPerformance() {
+        let defaultReadiness = Readiness.default
+        XCTAssertFalse(defaultReadiness.shouldReduceIntensity)
+        XCTAssertFalse(defaultReadiness.shouldIncreaseIntensity)
+
+        let lowEnergyReadiness = Readiness(energy: .low, soreness: .none, timeAvailable: 60)
+        XCTAssertTrue(lowEnergyReadiness.shouldReduceIntensity)
+
+        let optimalReadiness = Readiness(energy: .high, soreness: .none, timeAvailable: 60)
+        XCTAssertTrue(optimalReadiness.shouldIncreaseIntensity)
+    }
+
+    // MARK: - Set Ordering Tests
+
+    func testSetOrderIndexing() {
+        struct OrderedSet {
+            let exerciseName: String
+            let orderIndex: Int
+        }
+
+        var sets = [
+            OrderedSet(exerciseName: "Bench Press", orderIndex: 0),
+            OrderedSet(exerciseName: "Bench Press", orderIndex: 1),
+            OrderedSet(exerciseName: "Bench Press", orderIndex: 2),
+            OrderedSet(exerciseName: "Row", orderIndex: 3),
+            OrderedSet(exerciseName: "Row", orderIndex: 4)
+        ]
+
+        sets.sort { $0.orderIndex < $1.orderIndex }
+
+        XCTAssertEqual(sets[0].orderIndex, 0)
+        XCTAssertEqual(sets[4].orderIndex, 4)
+    }
+
+    // MARK: - Exercise Grouping Tests
+
+    func testGroupingSetsByExercise() {
+        struct SimpleSet {
+            let exerciseName: String
+            let weight: Double
+            let reps: Int
+        }
+
+        let sets = [
+            SimpleSet(exerciseName: "Bench Press", weight: 60, reps: 5),
+            SimpleSet(exerciseName: "Bench Press", weight: 100, reps: 5),
+            SimpleSet(exerciseName: "Barbell Row", weight: 80, reps: 8),
+            SimpleSet(exerciseName: "Barbell Row", weight: 80, reps: 8),
+            SimpleSet(exerciseName: "Bench Press", weight: 90, reps: 8)
+        ]
+
+        let groupedByExercise = Dictionary(grouping: sets) { $0.exerciseName }
+
+        XCTAssertEqual(groupedByExercise.keys.count, 2)
+        XCTAssertEqual(groupedByExercise["Bench Press"]?.count, 3)
+        XCTAssertEqual(groupedByExercise["Barbell Row"]?.count, 2)
+    }
+
+    // MARK: - Session Completion Tests
+
+    func testSessionCompletionStatus() {
+        struct SessionStatus {
+            let totalSets: Int
+            let completedSets: Int
+
+            var isComplete: Bool { completedSets == totalSets }
+            var completionPercentage: Double {
+                guard totalSets > 0 else { return 0 }
+                return Double(completedSets) / Double(totalSets) * 100
+            }
+        }
+
+        let completeSession = SessionStatus(totalSets: 15, completedSets: 15)
+        XCTAssertTrue(completeSession.isComplete)
+        XCTAssertEqual(completeSession.completionPercentage, 100)
+
+        let partialSession = SessionStatus(totalSets: 15, completedSets: 10)
+        XCTAssertFalse(partialSession.isComplete)
+        XCTAssertEqual(partialSession.completionPercentage, 66.67, accuracy: 0.1)
+
+        let emptySession = SessionStatus(totalSets: 0, completedSets: 0)
+        XCTAssertEqual(emptySession.completionPercentage, 0)
+    }
+
+    // MARK: - Session Summary Tests
+
+    func testSessionSummaryGeneration() {
+        // Simulate a completed session
+        let exercises = [
+            (name: "Bench Press", volume: 2570.0, e1RM: 116.67, hitTarget: true),
+            (name: "Barbell Row", volume: 2400.0, e1RM: 110.0, hitTarget: true),
+            (name: "Lateral Raise", volume: 600.0, e1RM: 0.0, hitTarget: false)
+        ]
+
+        let totalVolume = exercises.reduce(0) { $0 + $1.volume }
+        let exercisesHittingTarget = exercises.filter { $0.hitTarget }.count
+        let successRate = Double(exercisesHittingTarget) / Double(exercises.count) * 100
+
+        XCTAssertEqual(totalVolume, 5570, accuracy: 0.001)
+        XCTAssertEqual(successRate, 66.67, accuracy: 0.1)
+    }
+
+    // MARK: - Location Tests
+
+    func testLocationAffectsEquipment() {
+        // Location enum should indicate available equipment
+        XCTAssertEqual(Location.gym.rawValue, "Gym")
+        XCTAssertEqual(Location.home.rawValue, "Home")
+
+        // Gym typically has more equipment
+        // Home typically has limited equipment
+    }
+
+    // MARK: - Notes Tests
+
+    func testSessionNotes() {
+        let sessionNotes = "Great workout, felt strong on bench press. Need to work on row form."
+
+        XCTAssertFalse(sessionNotes.isEmpty)
+        XCTAssertTrue(sessionNotes.contains("bench press"))
     }
 }

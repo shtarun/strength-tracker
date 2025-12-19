@@ -7,6 +7,9 @@ struct HomeView: View {
     @Query(sort: \WorkoutTemplate.dayNumber) private var templates: [WorkoutTemplate]
     @Query(sort: \WorkoutSession.date, order: .reverse) private var recentSessions: [WorkoutSession]
     @Query private var exercises: [Exercise]
+    @Query private var painFlags: [PainFlag]
+    @Query(sort: \PausedWorkout.pausedAt, order: .reverse) private var pausedWorkouts: [PausedWorkout]
+    @Query(sort: \WorkoutPlan.updatedAt, order: .reverse) private var plans: [WorkoutPlan]
 
     @State private var showReadinessCheck = false
     @State private var showActiveWorkout = false
@@ -14,19 +17,54 @@ struct HomeView: View {
     @State private var showCustomWorkout = false
     @State private var templateForReadiness: WorkoutTemplate?
     @State private var templateForWorkout: WorkoutTemplate?
+    @State private var pausedWorkoutToResume: PausedWorkout?
     @State private var todayPlan: TodayPlanResponse?
     @State private var isGeneratingPlan = false
     @State private var manuallySelectedTemplate: WorkoutTemplate?
     @State private var customWorkoutResponse: CustomWorkoutResponse?
+    @State private var showPlanDetail = false
 
     private var profile: UserProfile? { userProfiles.first }
+    private var activePlan: WorkoutPlan? { plans.first { $0.isActive } }
+    private var validPausedWorkout: PausedWorkout? {
+        pausedWorkouts.first { $0.isValid && $0.template != nil }
+    }
+    
+    /// Templates available for the current context (from plan if active, otherwise all templates)
+    private var availableTemplates: [WorkoutTemplate] {
+        if let plan = activePlan, let currentWeek = plan.currentPlanWeek {
+            // Use templates from the active plan's current week
+            return currentWeek.sortedTemplates
+        }
+        // Fall back to all templates if no active plan
+        return templates
+    }
+    
     private var nextTemplate: WorkoutTemplate? {
         // If user manually selected a template, use that
         if let manual = manuallySelectedTemplate {
             return manual
         }
         
-        // Otherwise, auto-select based on last workout
+        // If there's an active plan, use the plan's next workout logic
+        if let plan = activePlan, let currentWeek = plan.currentPlanWeek {
+            let planTemplates = currentWeek.sortedTemplates
+            guard !planTemplates.isEmpty else { return nil }
+            
+            // Find the most recent session that used a template from this plan
+            if let lastSession = recentSessions.first,
+               let lastTemplate = lastSession.template,
+               let lastIndex = planTemplates.firstIndex(where: { $0.id == lastTemplate.id }) {
+                // Return next template in sequence
+                let nextIndex = (lastIndex + 1) % planTemplates.count
+                return planTemplates[nextIndex]
+            }
+            
+            // Return first template if no recent sessions match
+            return planTemplates.first
+        }
+        
+        // Fall back to standard template rotation (no active plan)
         guard let lastSession = recentSessions.first,
               let lastTemplate = lastSession.template,
               let index = templates.firstIndex(where: { $0.id == lastTemplate.id }) else {
@@ -36,34 +74,136 @@ struct HomeView: View {
         return templates[nextIndex]
     }
 
+    // MARK: - Status Logic
+    
+    private var isCompletedToday: Bool {
+        guard let lastSession = recentSessions.first else { return false }
+        return Calendar.current.isDateInToday(lastSession.date) && lastSession.isCompleted
+    }
+    
+    private var workoutsCompletedThisWeek: Int {
+        let calendar = Calendar.current
+        let now = Date()
+        guard let weekInterval = calendar.dateInterval(of: .weekOfYear, for: now) else { return 0 }
+        
+        return recentSessions.filter { session in
+            session.isCompleted && weekInterval.contains(session.date)
+        }.count
+    }
+    
+    private var effectiveGoal: Int {
+        if let plan = activePlan {
+            return plan.workoutsPerWeek
+        } else {
+            return profile?.activeDaysGoal ?? 4
+        }
+    }
+    
+    private var isWeeklyGoalMet: Bool {
+        return workoutsCompletedThisWeek >= effectiveGoal
+    }
+    
+    // MARK: - Message Logic
+    
+    private var homeMessage: String {
+        if isCompletedToday {
+            return "Great work today! You've crushed your workout."
+        } else if isWeeklyGoalMet {
+            if activePlan != nil {
+                return "You've hit your weekly plan goal! Enjoy your recovery day."
+            } else {
+                return "You've hit your weekly activity goal! Enjoy your rest."
+            }
+        } else {
+            let remaining = effectiveGoal - workoutsCompletedThisWeek
+            if remaining > 0 {
+                return "Let's get moving! \(remaining) more workout\(remaining == 1 ? "" : "s") to hit your weekly goal."
+            } else {
+                return "Ready for another session? Let's keep the streak alive!"
+            }
+        }
+    }
+    
+    private var shouldShowRestSuggestion: Bool {
+        // Suggest rest if weekly goal met AND (either worked out today OR completed > goal)
+        return isWeeklyGoalMet && (isCompletedToday || workoutsCompletedThisWeek > effectiveGoal)
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
-                    // Greeting
+                    // Greeting & Message Card
                     if let profile = profile {
-                        GreetingCard(name: profile.name)
+                        GreetingHeader(name: profile.name)
+                        
+                        MessageCard(
+                            message: homeMessage,
+                            isGoalMet: isWeeklyGoalMet,
+                            isCompletedToday: isCompletedToday
+                        )
                     }
 
-                    // Today's workout card
-                    if let template = nextTemplate {
-                        TodayWorkoutCard(
+                    // Active plan card - Always visible if plan exists
+                    if let plan = activePlan {
+                        ActivePlanHomeCard(plan: plan)
+                            .onTapGesture {
+                                showPlanDetail = true
+                            }
+                    }
+
+                    // Resume paused workout banner - Highest priority for workout actions
+                    if let paused = validPausedWorkout, let template = paused.template {
+                        ResumeWorkoutCard(
+                            pausedWorkout: paused,
                             template: template,
-                            allTemplates: templates,
-                            isLoading: isGeneratingPlan,
-                            onStart: {
-                                templateForReadiness = template
+                            onResume: {
+                                pausedWorkoutToResume = paused
+                                todayPlan = paused.plan
+                                templateForWorkout = template
                             },
-                            onSwap: {
-                                showWorkoutPicker = true
+                            onDiscard: {
+                                modelContext.delete(paused)
+                                try? modelContext.save()
                             }
                         )
-                    } else if templates.isEmpty {
+                    }
+                    
+                    // Main Action Area: Rest Suggestion OR Today's Workout
+                    if shouldShowRestSuggestion {
+                         RestDayCard()
+                    }
+                    
+                    // Show workout card if not a rest day, OR if user wants to work out anyway (we could add a "Work out anyway" button later, but for now just hiding it if rest suggested is cleaner, or we can show it below)
+                    // Requirement: "show me the active plan and the upcoming workout"
+                    // If completed today, we might still want to show upcoming workout (next one)
+                    
+                    if validPausedWorkout == nil, let template = nextTemplate {
+                        if !isCompletedToday || activePlan != nil { 
+                             // Show upcoming workout if not done today, OR if on a plan (so they can see what's next even if done)
+                             // If done today, maybe change title to "Upcoming Workout" instead of "Today's Workout"
+                             
+                            TodayWorkoutCard(
+                                title: isCompletedToday ? "Upcoming Workout" : "Today's Workout",
+                                template: template,
+                                allTemplates: availableTemplates,
+                                isLoading: isGeneratingPlan,
+                                onStart: {
+                                    templateForReadiness = template
+                                },
+                                onSwap: {
+                                    showWorkoutPicker = true
+                                }
+                            )
+                        }
+                    } else if validPausedWorkout == nil && availableTemplates.isEmpty {
                         // No templates yet
                         ContentUnavailableView(
                             "No Workouts",
                             systemImage: "dumbbell.fill",
-                            description: Text("Go to Templates tab to create your first workout")
+                            description: Text(activePlan != nil ? 
+                                "Your current plan week has no workouts configured" :
+                                "Go to Templates tab to create your first workout")
                         )
                     }
                     
@@ -85,6 +225,7 @@ struct HomeView: View {
                 .padding()
             }
             .navigationTitle("Home")
+            .navigationBarTitleDisplayMode(.inline)
             .sheet(item: $templateForReadiness) { template in
                 ReadinessCheckSheet(
                     template: template,
@@ -96,12 +237,16 @@ struct HomeView: View {
             .fullScreenCover(item: $templateForWorkout) { template in
                 WorkoutView(
                     template: template,
-                    plan: todayPlan
+                    plan: todayPlan,
+                    resumingFrom: pausedWorkoutToResume
                 )
+                .onDisappear {
+                    pausedWorkoutToResume = nil
+                }
             }
             .sheet(isPresented: $showWorkoutPicker) {
                 WorkoutPickerSheet(
-                    templates: templates,
+                    templates: availableTemplates,
                     currentTemplate: nextTemplate,
                     onSelect: { template in
                         manuallySelectedTemplate = template
@@ -119,6 +264,11 @@ struct HomeView: View {
                     }
                 )
                 .presentationDetents([.large])
+            }
+            .sheet(isPresented: $showPlanDetail) {
+                if let plan = activePlan {
+                    PlanDetailView(plan: plan)
+                }
             }
         }
     }
@@ -140,8 +290,9 @@ struct HomeView: View {
         // Dismiss the readiness sheet first
         templateForReadiness = nil
 
-        // Generate plan if LLM is configured
-        if let profile = profile, profile.preferredLLMProvider != .offline {
+        // Generate plan if LLM is configured AND readiness is not default
+        // Only tweak the workout if user selected non-default values
+        if let profile = profile, profile.preferredLLMProvider != .offline, !readiness.isDefault {
             Task {
                 isGeneratingPlan = true
                 do {
@@ -185,16 +336,17 @@ struct HomeView: View {
         
         // Create ExerciseTemplates for each exercise in the custom workout
         for (index, exercisePlan) in response.exercises.enumerated() {
-            // Find matching exercise from library by name
-            let matchingExercise = exercises.first { 
-                $0.name.lowercased() == exercisePlan.exerciseName.lowercased() 
-            }
-            
+            // Find matching exercise from library using fuzzy matching
+            let matchingExercise = ExerciseMatcher.findBestMatch(
+                name: exercisePlan.exerciseName,
+                in: exercises
+            )
+
             // Parse reps range (e.g., "8-10" or "5")
             let repsComponents = exercisePlan.reps.split(separator: "-")
             let minReps: Int
             let maxReps: Int
-            
+
             if repsComponents.count == 2 {
                 minReps = Int(repsComponents[0]) ?? 8
                 maxReps = Int(repsComponents[1]) ?? 10
@@ -202,7 +354,7 @@ struct HomeView: View {
                 minReps = Int(exercisePlan.reps) ?? 8
                 maxReps = minReps
             }
-            
+
             // Create prescription from the custom workout plan
             let prescription = Prescription(
                 progressionType: .straightSets, // Custom workouts use straight sets
@@ -215,19 +367,19 @@ struct HomeView: View {
                 backoffLoadDropPercent: 0,
                 workingSets: exercisePlan.sets // All sets are working sets
             )
-            
+
             let exerciseTemplate = ExerciseTemplate(
                 exercise: matchingExercise,
                 orderIndex: index,
                 isOptional: false,
                 prescription: prescription
             )
-            
+
             // Store exercise name if we couldn't find a match (for display purposes)
             if matchingExercise == nil {
                 print("⚠️ Exercise not found in library: \(exercisePlan.exerciseName)")
             }
-            
+
             customTemplate.exercises.append(exerciseTemplate)
             modelContext.insert(exerciseTemplate)
         }
@@ -312,6 +464,17 @@ struct HomeView: View {
         let equipment = profile?.equipmentProfile
         let equipmentList = equipment?.availableEquipment.map { $0.rawValue } ?? []
 
+        // Fetch active (recent and unresolved) pain flags
+        let activePainFlags = painFlags
+            .filter { $0.isRecent }
+            .map { painFlag -> PainFlagContext in
+                PainFlagContext(
+                    exerciseName: painFlag.exercise?.name,
+                    bodyPart: painFlag.bodyPart.rawValue,
+                    severity: painFlag.severity.rawValue
+                )
+            }
+
         return CoachContext(
             userGoal: profile?.goal.rawValue ?? "Both",
             currentTemplate: TemplateContext(
@@ -340,7 +503,7 @@ struct HomeView: View {
             timeAvailable: readiness.timeAvailable,
             recentHistory: exerciseHistory,
             equipmentAvailable: equipmentList,
-            painFlags: [] // TODO: Fetch active pain flags
+            painFlags: activePainFlags
         )
     }
 
@@ -373,7 +536,7 @@ struct HomeView: View {
 
 // MARK: - Subviews
 
-struct GreetingCard: View {
+struct GreetingHeader: View {
     let name: String
 
     private var greeting: String {
@@ -399,7 +562,231 @@ struct GreetingCard: View {
     }
 }
 
+struct MessageCard: View {
+    let message: String
+    let isGoalMet: Bool
+    let isCompletedToday: Bool
+    
+    var body: some View {
+        HStack(spacing: 16) {
+            Image(systemName: iconName)
+                .font(.title)
+                .foregroundStyle(iconColor)
+                .frame(width: 50, height: 50)
+                .background(iconColor.opacity(0.1))
+                .clipShape(Circle())
+            
+            Text(message)
+                .font(.subheadline) // Slightly smaller font for longer messages
+                .foregroundStyle(.primary)
+                .fixedSize(horizontal: false, vertical: true) // Allow multiline
+            
+            Spacer()
+        }
+        .padding()
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: .black.opacity(0.05), radius: 5, y: 2)
+    }
+    
+    private var iconName: String {
+        if isCompletedToday { return "checkmark.seal.fill" }
+        if isGoalMet { return "trophy.fill" }
+        return "flame.fill"
+    }
+    
+    private var iconColor: Color {
+        if isCompletedToday { return .green }
+        if isGoalMet { return .yellow }
+        return .orange
+    }
+}
+
+struct RestDayCard: View {
+    var body: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "moon.stars.fill")
+                .font(.system(size: 40))
+                .foregroundStyle(.indigo)
+            
+            Text("Rest & Recovery")
+                .font(.title3.bold())
+            
+            Text("You've met your activity goal for the week. Take some time to recover and come back stronger!")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(24)
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: .black.opacity(0.05), radius: 5, y: 2)
+    }
+}
+
+// MARK: - Active Plan Home Card
+
+struct ActivePlanHomeCard: View {
+    let plan: WorkoutPlan
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: "calendar.badge.clock")
+                    .font(.title2)
+                    .foregroundStyle(.blue)
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Active Plan")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text(plan.name)
+                        .font(.headline)
+                }
+                
+                Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .foregroundStyle(.tertiary)
+            }
+            
+            // Current week info
+            if let week = plan.currentPlanWeek {
+                HStack(spacing: 8) {
+                    HStack(spacing: 4) {
+                        Image(systemName: week.weekType.icon)
+                            .foregroundStyle(week.weekType.color)
+                        Text("Week \(plan.currentWeek)/\(plan.durationWeeks)")
+                    }
+                    
+                    Text("•")
+                        .foregroundStyle(.secondary)
+                    
+                    Text(week.weekType.rawValue)
+                        .foregroundStyle(week.weekType.color)
+                    
+                    Spacer()
+                    
+                    Text("\(plan.completedWorkoutsThisWeek)/\(plan.workoutsPerWeek) workouts")
+                        .foregroundStyle(.secondary)
+                }
+                .font(.subheadline)
+            }
+            
+            // Progress bar
+            ProgressView(value: plan.progressPercentage)
+                .tint(.blue)
+            
+            // Deload week notice
+            if plan.currentPlanWeek?.weekType == .deload {
+                HStack(spacing: 6) {
+                    Image(systemName: "info.circle.fill")
+                        .foregroundStyle(.orange)
+                    Text("Deload week: Reduce intensity to 60% and volume by half")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(8)
+                .background(Color.orange.opacity(0.1))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+            }
+        }
+        .padding()
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: .black.opacity(0.05), radius: 5, y: 2)
+    }
+}
+
+struct ResumeWorkoutCard: View {
+    let pausedWorkout: PausedWorkout
+    let template: WorkoutTemplate
+    let onResume: () -> Void
+    let onDiscard: () -> Void
+
+    @State private var showDiscardConfirmation = false
+
+    private var pausedTimeAgo: String {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .abbreviated
+        return formatter.localizedString(for: pausedWorkout.pausedAt, relativeTo: Date())
+    }
+
+    private var elapsedTime: String {
+        let minutes = Int(pausedWorkout.elapsedDuration / 60)
+        return "\(minutes) min"
+    }
+
+    private var completedSetsCount: Int {
+        pausedWorkout.exerciseSets.values.flatMap { $0 }.filter { $0.isCompleted }.count
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: "pause.circle.fill")
+                    .font(.title2)
+                    .foregroundStyle(.orange)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Paused Workout")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    Text(template.name)
+                        .font(.headline)
+                }
+
+                Spacer()
+
+                Button {
+                    showDiscardConfirmation = true
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.title3)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            HStack(spacing: 16) {
+                Label(pausedTimeAgo, systemImage: "clock")
+                Label(elapsedTime + " elapsed", systemImage: "timer")
+                Label("\(completedSetsCount) sets done", systemImage: "checkmark.circle")
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
+
+            Button(action: onResume) {
+                HStack {
+                    Image(systemName: "play.fill")
+                    Text("Resume Workout")
+                }
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(Color.orange)
+                .foregroundStyle(.white)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+            }
+        }
+        .padding()
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.orange.opacity(0.5), lineWidth: 2)
+        )
+        .shadow(color: .orange.opacity(0.2), radius: 8, y: 4)
+        .confirmationDialog("Discard Workout?", isPresented: $showDiscardConfirmation, titleVisibility: .visible) {
+            Button("Discard Progress", role: .destructive, action: onDiscard)
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Your progress will be lost. This cannot be undone.")
+        }
+    }
+}
+
 struct TodayWorkoutCard: View {
+    let title: String
     let template: WorkoutTemplate
     let allTemplates: [WorkoutTemplate]
     let isLoading: Bool
@@ -412,7 +799,7 @@ struct TodayWorkoutCard: View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Today's Workout")
+                    Text(title)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                     Text(template.name)

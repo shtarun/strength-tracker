@@ -14,6 +14,7 @@ final class Exercise {
     var instructions: String?
     var formCuesData: Data?
     var commonMistakesData: Data?
+    var youtubeVideoURL: String?
     var isMobilityRoutine: Bool = false
     var routineType: String? = nil
     var durationSeconds: Int? = nil
@@ -30,6 +31,7 @@ final class Exercise {
         instructions: String? = nil,
         formCues: [String] = [],
         commonMistakes: [String] = [],
+        youtubeVideoURL: String? = nil,
         isMobilityRoutine: Bool = false,
         routineType: String? = nil,
         durationSeconds: Int? = nil
@@ -45,6 +47,7 @@ final class Exercise {
         self.instructions = instructions
         self.formCuesData = try? JSONEncoder().encode(formCues)
         self.commonMistakesData = try? JSONEncoder().encode(commonMistakes)
+        self.youtubeVideoURL = youtubeVideoURL
         self.isMobilityRoutine = isMobilityRoutine
         self.routineType = routineType
         self.durationSeconds = durationSeconds

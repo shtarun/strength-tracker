@@ -134,6 +134,37 @@ func generatePlan(
 }
 ```
 
+### Custom Workout Generation
+
+```swift
+func generateCustomWorkout(
+    request: CustomWorkoutRequest,
+    provider: LLMProviderType
+) async throws -> CustomWorkoutResponse
+```
+
+**CustomWorkoutRequest:**
+| Field | Type | Description |
+|-------|------|-------------|
+| `goal` | `String` | Workout goal (strength/hypertrophy) |
+| `duration` | `Int` | Target duration in minutes |
+| `focusAreas` | `[String]` | Target muscle groups |
+| `equipment` | `[String]` | Available equipment |
+| `constraints` | `String?` | User constraints or preferences |
+
+**CustomExercisePlan:**
+| Field | Type | Description |
+|-------|------|-------------|
+| `exerciseName` | `String` | Name of the exercise |
+| `sets` | `Int` | Number of sets |
+| `reps` | `String` | Rep range (e.g., "8-10") |
+| `rpeCap` | `Double` | Target RPE |
+| `notes` | `String?` | Exercise-specific notes |
+| `movementPattern` | `String?` | For new exercises |
+| `primaryMuscles` | `[String]?` | For new exercises |
+| `equipmentRequired` | `[String]?` | For new exercises |
+| `youtubeVideoURL` | `String?` | Form tutorial video link |
+
 ---
 
 ## Providers

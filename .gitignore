@@ -88,6 +88,7 @@ iOSInjectionProject/
 
 # macOS specific
 .DS_Store
+**/.DS_Store
 .AppleDouble
 .LSOverride
 ._*
@@ -121,3 +122,13 @@ coverage/
 
 # App Store Connect
 *.appstoreconnect
+
+## User settings
+xcuserdata/
+*.xcuserstate
+xcschememanagement.plist
+
+## Build generated
+build/
+DerivedData/
+# *.build   # (remove this line; it doesn't ignore .build/)

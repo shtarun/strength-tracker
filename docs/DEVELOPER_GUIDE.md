@@ -440,7 +440,21 @@ print("📥 Response: \(content)")
 2. Rebuild and run
 3. Complete onboarding again
 
-Or the app will auto-repair on next launch via `seedDataIfNeeded()`.
+
+### SwiftData Crash (Invalidated Model)
+
+**Symptom:** Crash with `Fatal error: This model instance was invalidated because its backing data could no longer be found`.
+
+**Cause:** Inconsistent persistent data where an object (like `WorkoutSession`) refers to a deleted relationship object (like `WorkoutTemplate`) that was removed from the store but not correctly nullified in the referring object.
+
+**Solution:**
+1.  **Simulator:**
+    - Run `xcrun simctl uninstall booted com.twinitylabs.StrengthTracker` to fully remove the app and its data.
+    - Rebuild and run.
+2.  **Device:**
+    - DELETE the app from the home screen.
+    - Reinstall from Xcode.
+
 
 ### Workout Not Starting
 

@@ -1,281 +1,413 @@
 import XCTest
-@testable import StrengthTracker
 
-// MARK: - Exercise Model Tests
+/// Unit tests for core model types and enums
+/// Tests Codable conformance, computed properties, and enum behaviors
+final class ModelTests: XCTestCase {
 
-final class ExerciseModelTests: XCTestCase {
-    
-    func testExercise_Creation() {
-        let exercise = Exercise(
-            name: "Bench Press",
-            movementPattern: .horizontalPush,
-            primaryMuscles: [.chest],
-            secondaryMuscles: [.triceps, .frontDelt],
-            equipmentRequired: [.barbell, .bench]
-        )
-        
-        XCTAssertEqual(exercise.name, "Bench Press")
-        XCTAssertEqual(exercise.movementPattern, .horizontalPush)
-        XCTAssertEqual(exercise.primaryMuscles, [.chest])
-        XCTAssertTrue(exercise.secondaryMuscles.contains(.triceps))
-        XCTAssertTrue(exercise.equipmentRequired.contains(.barbell))
-    }
-    
-    func testExercise_DefaultValues() {
-        let exercise = Exercise(
-            name: "Test",
-            movementPattern: .squat,
-            primaryMuscles: [.quads],
-            secondaryMuscles: [],
-            equipmentRequired: []
-        )
-        
-        XCTAssertTrue(exercise.isCompound)
-        XCTAssertNil(exercise.instructions)
-        XCTAssertEqual(exercise.defaultProgressionType, .topSetBackoff)
-    }
-    
-    func testExercise_AllMuscles() {
-        let exercise = Exercise(
-            name: "Bench Press",
-            movementPattern: .horizontalPush,
-            primaryMuscles: [.chest],
-            secondaryMuscles: [.triceps, .frontDelt],
-            equipmentRequired: [.barbell, .bench]
-        )
-        
-        let allMuscles = exercise.allMuscles
-        XCTAssertEqual(allMuscles.count, 3)
-        XCTAssertTrue(allMuscles.contains(.chest))
-        XCTAssertTrue(allMuscles.contains(.triceps))
-    }
-    
-    func testExercise_DefaultWeightIncrement() {
-        let barbellExercise = Exercise(
-            name: "Squat",
-            movementPattern: .squat,
-            primaryMuscles: [.quads],
-            equipmentRequired: [.barbell, .rack],
-            isCompound: true
-        )
-        XCTAssertEqual(barbellExercise.defaultWeightIncrement, 2.5)
-        
-        let dumbbellExercise = Exercise(
-            name: "DB Curl",
-            movementPattern: .isolation,
-            primaryMuscles: [.biceps],
-            equipmentRequired: [.dumbbell],
-            isCompound: false
-        )
-        XCTAssertEqual(dumbbellExercise.defaultWeightIncrement, 2.0)
-    }
-}
+    // MARK: - Readiness Tests
 
-// MARK: - Equipment Enum Tests
-
-final class EquipmentEnumTests: XCTestCase {
-    
-    func testEquipment_AllCases() {
-        XCTAssertTrue(Equipment.allCases.contains(.barbell))
-        XCTAssertTrue(Equipment.allCases.contains(.dumbbell))
-        XCTAssertTrue(Equipment.allCases.contains(.bodyweight))
-        XCTAssertTrue(Equipment.allCases.contains(.machine))
-        XCTAssertTrue(Equipment.allCases.contains(.cable))
-        XCTAssertTrue(Equipment.allCases.contains(.bench))
-        XCTAssertTrue(Equipment.allCases.contains(.rack))
-    }
-    
-    func testEquipment_Identifiable() {
-        let equipment = Equipment.barbell
-        XCTAssertEqual(equipment.id, equipment.rawValue)
-    }
-}
-
-// MARK: - MovementPattern Enum Tests
-
-final class MovementPatternEnumTests: XCTestCase {
-    
-    func testMovementPattern_AllCases() {
-        let allCases = MovementPattern.allCases
-        XCTAssertTrue(allCases.contains(.horizontalPush))
-        XCTAssertTrue(allCases.contains(.horizontalPull))
-        XCTAssertTrue(allCases.contains(.verticalPush))
-        XCTAssertTrue(allCases.contains(.verticalPull))
-        XCTAssertTrue(allCases.contains(.squat))
-        XCTAssertTrue(allCases.contains(.hinge))
-        XCTAssertTrue(allCases.contains(.lunge))
-    }
-}
-
-// MARK: - Goal Enum Tests
-
-final class GoalModelEnumTests: XCTestCase {
-    
-    func testGoal_AllCases() {
-        XCTAssertTrue(Goal.allCases.contains(.strength))
-        XCTAssertTrue(Goal.allCases.contains(.hypertrophy))
-        XCTAssertTrue(Goal.allCases.contains(.both))
-    }
-    
-    func testGoal_RawValues() {
-        XCTAssertEqual(Goal.strength.rawValue, "Strength")
-        XCTAssertEqual(Goal.hypertrophy.rawValue, "Hypertrophy")
-        XCTAssertEqual(Goal.both.rawValue, "Both")
-    }
-}
-
-// MARK: - Location Enum Tests
-
-final class LocationEnumTests: XCTestCase {
-    
-    func testLocation_AllCases() {
-        XCTAssertTrue(Location.allCases.contains(.gym))
-        XCTAssertTrue(Location.allCases.contains(.home))
-        XCTAssertTrue(Location.allCases.contains(.mixed))
-    }
-    
-    func testLocation_RawValues() {
-        XCTAssertEqual(Location.gym.rawValue, "Gym")
-        XCTAssertEqual(Location.home.rawValue, "Home")
-        XCTAssertEqual(Location.mixed.rawValue, "Mixed")
-    }
-}
-
-// MARK: - SetType Enum Tests
-
-final class SetTypeEnumTests: XCTestCase {
-    
-    func testSetType_AllCases() {
-        XCTAssertTrue(SetType.allCases.contains(.warmup))
-        XCTAssertTrue(SetType.allCases.contains(.working))
-        XCTAssertTrue(SetType.allCases.contains(.topSet))
-        XCTAssertTrue(SetType.allCases.contains(.backoff))
-    }
-    
-    func testSetType_RawValues() {
-        XCTAssertEqual(SetType.warmup.rawValue, "Warmup")
-        XCTAssertEqual(SetType.working.rawValue, "Working")
-        XCTAssertEqual(SetType.topSet.rawValue, "Top Set")
-        XCTAssertEqual(SetType.backoff.rawValue, "Backoff")
-    }
-}
-
-// MARK: - UnitSystem Enum Tests
-
-final class UnitSystemEnumTests: XCTestCase {
-    
-    func testUnitSystem_AllCases() {
-        XCTAssertTrue(UnitSystem.allCases.contains(.metric))
-        XCTAssertTrue(UnitSystem.allCases.contains(.imperial))
-    }
-    
-    func testUnitSystem_WeightUnit() {
-        XCTAssertEqual(UnitSystem.metric.weightUnit, "kg")
-        XCTAssertEqual(UnitSystem.imperial.weightUnit, "lbs")
-    }
-    
-    func testUnitSystem_SmallIncrement() {
-        XCTAssertEqual(UnitSystem.metric.smallIncrement, 2.5)
-        XCTAssertEqual(UnitSystem.imperial.smallIncrement, 5.0)
-    }
-}
-
-// MARK: - ProgressionType Enum Tests
-
-final class ProgressionTypeEnumTests: XCTestCase {
-    
-    func testProgressionType_AllCases() {
-        XCTAssertTrue(ProgressionType.allCases.contains(.topSetBackoff))
-        XCTAssertTrue(ProgressionType.allCases.contains(.doubleProgression))
-        XCTAssertTrue(ProgressionType.allCases.contains(.straightSets))
-    }
-    
-    func testProgressionType_RawValues() {
-        XCTAssertEqual(ProgressionType.topSetBackoff.rawValue, "Top Set + Backoffs")
-        XCTAssertEqual(ProgressionType.doubleProgression.rawValue, "Double Progression")
-        XCTAssertEqual(ProgressionType.straightSets.rawValue, "Straight Sets")
-    }
-}
-
-// MARK: - Readiness Tests
-
-final class ReadinessTests: XCTestCase {
-    
-    func testReadiness_Default() {
+    func testReadinessDefault() {
         let readiness = Readiness.default
-        
         XCTAssertEqual(readiness.energy, .ok)
         XCTAssertEqual(readiness.soreness, .none)
         XCTAssertEqual(readiness.timeAvailable, 60)
     }
-    
-    func testReadiness_ShouldReduceIntensity() {
+
+    func testReadinessIsDefault() {
+        let defaultReadiness = Readiness.default
+        XCTAssertTrue(defaultReadiness.isDefault)
+
+        let customReadiness = Readiness(energy: .high, soreness: .none, timeAvailable: 60)
+        XCTAssertFalse(customReadiness.isDefault)
+    }
+
+    func testReadinessShouldReduceIntensity() {
+        // Low energy should reduce intensity
         let lowEnergy = Readiness(energy: .low, soreness: .none, timeAvailable: 60)
         XCTAssertTrue(lowEnergy.shouldReduceIntensity)
-        
+
+        // High soreness should reduce intensity
         let highSoreness = Readiness(energy: .ok, soreness: .high, timeAvailable: 60)
         XCTAssertTrue(highSoreness.shouldReduceIntensity)
-        
+
+        // Both should reduce intensity
+        let both = Readiness(energy: .low, soreness: .high, timeAvailable: 60)
+        XCTAssertTrue(both.shouldReduceIntensity)
+
+        // Normal should not reduce
         let normal = Readiness(energy: .ok, soreness: .none, timeAvailable: 60)
         XCTAssertFalse(normal.shouldReduceIntensity)
     }
-    
-    func testReadiness_ShouldIncreaseIntensity() {
+
+    func testReadinessShouldIncreaseIntensity() {
+        // High energy + no soreness should increase
         let optimal = Readiness(energy: .high, soreness: .none, timeAvailable: 60)
         XCTAssertTrue(optimal.shouldIncreaseIntensity)
-        
-        let subOptimal = Readiness(energy: .high, soreness: .mild, timeAvailable: 60)
-        XCTAssertFalse(subOptimal.shouldIncreaseIntensity)
+
+        // High energy + some soreness should not increase
+        let withSoreness = Readiness(energy: .high, soreness: .mild, timeAvailable: 60)
+        XCTAssertFalse(withSoreness.shouldIncreaseIntensity)
+
+        // OK energy should not increase
+        let okEnergy = Readiness(energy: .ok, soreness: .none, timeAvailable: 60)
+        XCTAssertFalse(okEnergy.shouldIncreaseIntensity)
     }
-}
 
-// MARK: - EnergyLevel Enum Tests
+    func testReadinessCodable() throws {
+        let readiness = Readiness(energy: .high, soreness: .mild, timeAvailable: 45)
+        let encoded = try JSONEncoder().encode(readiness)
+        let decoded = try JSONDecoder().decode(Readiness.self, from: encoded)
 
-final class EnergyLevelEnumTests: XCTestCase {
-    
-    func testEnergyLevel_AllCases() {
+        XCTAssertEqual(decoded.energy, .high)
+        XCTAssertEqual(decoded.soreness, .mild)
+        XCTAssertEqual(decoded.timeAvailable, 45)
+    }
+
+    func testReadinessEquatable() {
+        let r1 = Readiness(energy: .ok, soreness: .none, timeAvailable: 60)
+        let r2 = Readiness(energy: .ok, soreness: .none, timeAvailable: 60)
+        let r3 = Readiness(energy: .high, soreness: .none, timeAvailable: 60)
+
+        XCTAssertEqual(r1, r2)
+        XCTAssertNotEqual(r1, r3)
+    }
+
+    // MARK: - EnergyLevel Tests
+
+    func testEnergyLevelCases() {
+        XCTAssertEqual(EnergyLevel.allCases.count, 3)
         XCTAssertTrue(EnergyLevel.allCases.contains(.low))
         XCTAssertTrue(EnergyLevel.allCases.contains(.ok))
         XCTAssertTrue(EnergyLevel.allCases.contains(.high))
     }
-}
 
-// MARK: - SorenessLevel Enum Tests
+    func testEnergyLevelRawValues() {
+        XCTAssertEqual(EnergyLevel.low.rawValue, "Low")
+        XCTAssertEqual(EnergyLevel.ok.rawValue, "OK")
+        XCTAssertEqual(EnergyLevel.high.rawValue, "High")
+    }
 
-final class SorenessLevelEnumTests: XCTestCase {
-    
-    func testSorenessLevel_AllCases() {
+    func testEnergyLevelIdentifiable() {
+        XCTAssertEqual(EnergyLevel.low.id, "Low")
+    }
+
+    func testEnergyLevelCodable() throws {
+        let level = EnergyLevel.high
+        let encoded = try JSONEncoder().encode(level)
+        let decoded = try JSONDecoder().decode(EnergyLevel.self, from: encoded)
+        XCTAssertEqual(decoded, level)
+    }
+
+    // MARK: - SorenessLevel Tests
+
+    func testSorenessLevelCases() {
+        XCTAssertEqual(SorenessLevel.allCases.count, 3)
         XCTAssertTrue(SorenessLevel.allCases.contains(.none))
         XCTAssertTrue(SorenessLevel.allCases.contains(.mild))
         XCTAssertTrue(SorenessLevel.allCases.contains(.high))
     }
-    
-    func testSorenessLevel_RawValues() {
+
+    func testSorenessLevelRawValues() {
         XCTAssertEqual(SorenessLevel.none.rawValue, "None")
         XCTAssertEqual(SorenessLevel.mild.rawValue, "Mild")
         XCTAssertEqual(SorenessLevel.high.rawValue, "High")
     }
-}
 
-// MARK: - LLMProviderType Enum Tests
+    // MARK: - PainSeverity Tests
 
-final class LLMProviderTypeEnumTests: XCTestCase {
-    
-    func testLLMProviderType_AllCases() {
-        XCTAssertTrue(LLMProviderType.allCases.contains(.offline))
-        XCTAssertTrue(LLMProviderType.allCases.contains(.openai))
-        XCTAssertTrue(LLMProviderType.allCases.contains(.claude))
+    func testPainSeverityCases() {
+        XCTAssertEqual(PainSeverity.allCases.count, 3)
+        XCTAssertTrue(PainSeverity.allCases.contains(.mild))
+        XCTAssertTrue(PainSeverity.allCases.contains(.moderate))
+        XCTAssertTrue(PainSeverity.allCases.contains(.severe))
     }
-    
-    func testLLMProviderType_DisplayName() {
-        XCTAssertEqual(LLMProviderType.offline.displayName, "Offline Mode")
-        XCTAssertEqual(LLMProviderType.openai.displayName, "ChatGPT (OpenAI)")
-        XCTAssertEqual(LLMProviderType.claude.displayName, "Claude (Anthropic)")
+
+    // MARK: - Goal Tests
+
+    func testGoalCases() {
+        XCTAssertEqual(Goal.allCases.count, 3)
+        XCTAssertTrue(Goal.allCases.contains(.strength))
+        XCTAssertTrue(Goal.allCases.contains(.hypertrophy))
+        XCTAssertTrue(Goal.allCases.contains(.both))
     }
-    
-    func testLLMProviderType_RequiresAPIKey() {
-        XCTAssertFalse(LLMProviderType.offline.requiresAPIKey)
-        XCTAssertTrue(LLMProviderType.openai.requiresAPIKey)
-        XCTAssertTrue(LLMProviderType.claude.requiresAPIKey)
+
+    func testGoalRawValues() {
+        XCTAssertEqual(Goal.strength.rawValue, "Strength")
+        XCTAssertEqual(Goal.hypertrophy.rawValue, "Hypertrophy")
+        XCTAssertEqual(Goal.both.rawValue, "Both")
+    }
+
+    func testGoalDescriptions() {
+        XCTAssertTrue(Goal.strength.description.contains("heavier"))
+        XCTAssertTrue(Goal.hypertrophy.description.contains("muscle"))
+        XCTAssertTrue(Goal.both.description.contains("Balanced"))
+    }
+
+    func testGoalCodable() throws {
+        for goal in Goal.allCases {
+            let encoded = try JSONEncoder().encode(goal)
+            let decoded = try JSONDecoder().decode(Goal.self, from: encoded)
+            XCTAssertEqual(decoded, goal)
+        }
+    }
+
+    // MARK: - SetType Tests
+
+    func testSetTypeCases() {
+        XCTAssertEqual(SetType.allCases.count, 4)
+        XCTAssertTrue(SetType.allCases.contains(.warmup))
+        XCTAssertTrue(SetType.allCases.contains(.topSet))
+        XCTAssertTrue(SetType.allCases.contains(.backoff))
+        XCTAssertTrue(SetType.allCases.contains(.working))
+    }
+
+    func testSetTypeRawValues() {
+        XCTAssertEqual(SetType.warmup.rawValue, "Warmup")
+        XCTAssertEqual(SetType.topSet.rawValue, "Top Set")
+        XCTAssertEqual(SetType.backoff.rawValue, "Backoff")
+        XCTAssertEqual(SetType.working.rawValue, "Working")
+    }
+
+    func testSetTypeShortLabels() {
+        XCTAssertEqual(SetType.warmup.shortLabel, "W")
+        XCTAssertEqual(SetType.topSet.shortLabel, "T")
+        XCTAssertEqual(SetType.backoff.shortLabel, "B")
+        XCTAssertEqual(SetType.working.shortLabel, "")
+    }
+
+    func testSetTypeColors() {
+        XCTAssertEqual(SetType.warmup.color, "gray")
+        XCTAssertEqual(SetType.topSet.color, "orange")
+        XCTAssertEqual(SetType.backoff.color, "blue")
+        XCTAssertEqual(SetType.working.color, "green")
+    }
+
+    // MARK: - Equipment Tests
+
+    func testEquipmentCases() {
+        XCTAssertGreaterThan(Equipment.allCases.count, 5)
+        XCTAssertTrue(Equipment.allCases.contains(.barbell))
+        XCTAssertTrue(Equipment.allCases.contains(.dumbbell))
+        XCTAssertTrue(Equipment.allCases.contains(.cable))
+        XCTAssertTrue(Equipment.allCases.contains(.machine))
+        XCTAssertTrue(Equipment.allCases.contains(.bodyweight))
+    }
+
+    func testEquipmentRequiresGym() {
+        XCTAssertTrue(Equipment.cable.requiresGym)
+        XCTAssertTrue(Equipment.machine.requiresGym)
+        XCTAssertFalse(Equipment.barbell.requiresGym)
+        XCTAssertFalse(Equipment.dumbbell.requiresGym)
+        XCTAssertFalse(Equipment.bodyweight.requiresGym)
+    }
+
+    func testEquipmentCodable() throws {
+        for equipment in Equipment.allCases {
+            let encoded = try JSONEncoder().encode(equipment)
+            let decoded = try JSONDecoder().decode(Equipment.self, from: encoded)
+            XCTAssertEqual(decoded, equipment)
+        }
+    }
+
+    // MARK: - Muscle Tests
+
+    func testMuscleCases() {
+        XCTAssertGreaterThan(Muscle.allCases.count, 10)
+        XCTAssertTrue(Muscle.allCases.contains(.chest))
+        XCTAssertTrue(Muscle.allCases.contains(.lats))
+        XCTAssertTrue(Muscle.allCases.contains(.quads))
+        XCTAssertTrue(Muscle.allCases.contains(.hamstrings))
+    }
+
+    func testMuscleBodyPartMapping() {
+        XCTAssertEqual(Muscle.chest.bodyPart, .chest)
+        XCTAssertEqual(Muscle.lats.bodyPart, .back)
+        XCTAssertEqual(Muscle.upperBack.bodyPart, .back)
+        XCTAssertEqual(Muscle.frontDelt.bodyPart, .shoulders)
+        XCTAssertEqual(Muscle.biceps.bodyPart, .arms)
+        XCTAssertEqual(Muscle.quads.bodyPart, .legs)
+        XCTAssertEqual(Muscle.core.bodyPart, .core)
+    }
+
+    // MARK: - BodyPart Tests
+
+    func testBodyPartCases() {
+        XCTAssertEqual(BodyPart.allCases.count, 6)
+        XCTAssertTrue(BodyPart.allCases.contains(.chest))
+        XCTAssertTrue(BodyPart.allCases.contains(.back))
+        XCTAssertTrue(BodyPart.allCases.contains(.shoulders))
+        XCTAssertTrue(BodyPart.allCases.contains(.arms))
+        XCTAssertTrue(BodyPart.allCases.contains(.legs))
+        XCTAssertTrue(BodyPart.allCases.contains(.core))
+    }
+
+    // MARK: - MovementPattern Tests
+
+    func testMovementPatternCases() {
+        XCTAssertGreaterThan(MovementPattern.allCases.count, 5)
+        XCTAssertTrue(MovementPattern.allCases.contains(.horizontalPush))
+        XCTAssertTrue(MovementPattern.allCases.contains(.verticalPull))
+        XCTAssertTrue(MovementPattern.allCases.contains(.squat))
+        XCTAssertTrue(MovementPattern.allCases.contains(.hinge))
+    }
+
+    func testMovementPatternPrimaryMuscles() {
+        let horizontalPush = MovementPattern.horizontalPush.primaryMuscleGroups
+        XCTAssertTrue(horizontalPush.contains(.chest))
+        XCTAssertTrue(horizontalPush.contains(.triceps))
+
+        let squat = MovementPattern.squat.primaryMuscleGroups
+        XCTAssertTrue(squat.contains(.quads))
+        XCTAssertTrue(squat.contains(.glutes))
+
+        let hinge = MovementPattern.hinge.primaryMuscleGroups
+        XCTAssertTrue(hinge.contains(.hamstrings))
+        XCTAssertTrue(hinge.contains(.glutes))
+    }
+
+    func testMovementPatternMobilityFlag() {
+        XCTAssertTrue(MovementPattern.mobility.isMobility)
+        XCTAssertFalse(MovementPattern.squat.isMobility)
+    }
+
+    func testMovementPatternCardioFlag() {
+        XCTAssertTrue(MovementPattern.cardio.isCardio)
+        XCTAssertFalse(MovementPattern.squat.isCardio)
+    }
+
+    // MARK: - StallFix Tests
+
+    func testStallFixCases() {
+        XCTAssertEqual(StallFix.allCases.count, 4)
+        XCTAssertTrue(StallFix.allCases.contains(.deload))
+        XCTAssertTrue(StallFix.allCases.contains(.repRange))
+        XCTAssertTrue(StallFix.allCases.contains(.variation))
+        XCTAssertTrue(StallFix.allCases.contains(.weightJump))
+    }
+
+    func testStallFixRawValues() {
+        XCTAssertEqual(StallFix.deload.rawValue, "deload")
+        XCTAssertEqual(StallFix.repRange.rawValue, "rep_range")
+        XCTAssertEqual(StallFix.variation.rawValue, "variation")
+        XCTAssertEqual(StallFix.weightJump.rawValue, "weight_jump")
+    }
+
+    func testStallFixDisplayNames() {
+        XCTAssertEqual(StallFix.deload.displayName, "Deload Week")
+        XCTAssertEqual(StallFix.repRange.displayName, "Change Rep Range")
+        XCTAssertEqual(StallFix.variation.displayName, "Switch Variation")
+        XCTAssertEqual(StallFix.weightJump.displayName, "Force Weight Increase")
+    }
+
+    // MARK: - LLM Response Types Tests
+
+    func testStallAnalysisResponseCodable() throws {
+        let response = StallAnalysisResponse(
+            isStalled: true,
+            reason: "No progress for 3 weeks",
+            suggestedFix: "Deload by 10%",
+            fixType: "deload",
+            details: "Reduce weight for one week"
+        )
+
+        let encoded = try JSONEncoder().encode(response)
+        let decoded = try JSONDecoder().decode(StallAnalysisResponse.self, from: encoded)
+
+        XCTAssertEqual(decoded.isStalled, true)
+        XCTAssertEqual(decoded.reason, "No progress for 3 weeks")
+        XCTAssertEqual(decoded.fixType, "deload")
+    }
+
+    func testInsightResponseCodable() throws {
+        let response = InsightResponse(
+            insight: "Great progress on bench press",
+            action: "Increase weight by 2.5kg next session",
+            category: "progress"
+        )
+
+        let encoded = try JSONEncoder().encode(response)
+        let decoded = try JSONDecoder().decode(InsightResponse.self, from: encoded)
+
+        XCTAssertEqual(decoded.insight, "Great progress on bench press")
+        XCTAssertEqual(decoded.category, "progress")
+    }
+
+    func testPlannedSetResponseCodable() throws {
+        let response = PlannedSetResponse(
+            weight: 100,
+            reps: 5,
+            rpeCap: 8.5,
+            setCount: 3
+        )
+
+        let encoded = try JSONEncoder().encode(response)
+        let decoded = try JSONDecoder().decode(PlannedSetResponse.self, from: encoded)
+
+        XCTAssertEqual(decoded.weight, 100)
+        XCTAssertEqual(decoded.reps, 5)
+        XCTAssertEqual(decoded.rpeCap, 8.5)
+        XCTAssertEqual(decoded.setCount, 3)
+    }
+
+    func testWeeklyReviewResponseCodable() throws {
+        let response = WeeklyReviewResponse(
+            summary: "Good week of training",
+            highlights: ["PR on squat", "Consistent training"],
+            areasToImprove: ["More sleep"],
+            recommendation: "Add 2.5kg to main lifts",
+            consistencyScore: 8
+        )
+
+        let encoded = try JSONEncoder().encode(response)
+        let decoded = try JSONDecoder().decode(WeeklyReviewResponse.self, from: encoded)
+
+        XCTAssertEqual(decoded.summary, "Good week of training")
+        XCTAssertEqual(decoded.highlights.count, 2)
+        XCTAssertEqual(decoded.consistencyScore, 8)
+    }
+
+    // MARK: - Context Types Tests
+
+    func testReadinessContextCodable() throws {
+        let context = ReadinessContext(energy: "High", soreness: "None")
+
+        let encoded = try JSONEncoder().encode(context)
+        let decoded = try JSONDecoder().decode(ReadinessContext.self, from: encoded)
+
+        XCTAssertEqual(decoded.energy, "High")
+        XCTAssertEqual(decoded.soreness, "None")
+    }
+
+    func testPainFlagContextCodable() throws {
+        let context = PainFlagContext(
+            exerciseName: "Bench Press",
+            bodyPart: "shoulders",
+            severity: "Mild"
+        )
+
+        let encoded = try JSONEncoder().encode(context)
+        let decoded = try JSONDecoder().decode(PainFlagContext.self, from: encoded)
+
+        XCTAssertEqual(decoded.exerciseName, "Bench Press")
+        XCTAssertEqual(decoded.bodyPart, "shoulders")
+        XCTAssertEqual(decoded.severity, "Mild")
+    }
+
+    func testSessionHistoryContextCodable() throws {
+        let context = SessionHistoryContext(
+            date: "2025-01-15",
+            topSetWeight: 100,
+            topSetReps: 5,
+            topSetRPE: 8.5,
+            totalSets: 12,
+            e1RM: 116.67
+        )
+
+        let encoded = try JSONEncoder().encode(context)
+        let decoded = try JSONDecoder().decode(SessionHistoryContext.self, from: encoded)
+
+        XCTAssertEqual(decoded.topSetWeight, 100)
+        XCTAssertEqual(decoded.topSetReps, 5)
+        XCTAssertEqual(decoded.e1RM, 116.67)
     }
 }

@@ -79,21 +79,44 @@ class OpenAIProvider: LLMProvider {
         let response = try await sendMessage(userMessage)
         return try parseResponse(response)
     }
+    
+    func generateWorkoutPlan(request: GeneratePlanRequest) async throws -> GeneratedPlanResponse {
+        let focusAreasText = request.focusAreas?.map { $0.rawValue }.joined(separator: ", ") ?? "None specified"
+        
+        let userMessage = """
+        Generate a complete \(request.durationWeeks)-week workout plan.
+        
+        User Specifications:
+        - Goal: \(request.goal.rawValue)
+        - Duration: \(request.durationWeeks) weeks
+        - Training Days per Week: \(request.daysPerWeek)
+        - Preferred Split: \(request.split.rawValue)
+        - Available Equipment: \(request.equipment.map { $0.rawValue }.joined(separator: ", "))
+        - Include Deload Weeks: \(request.includeDeloads ? "Yes (recommend every 4th week)" : "No")
+        - Focus Areas: \(focusAreasText)
+        
+        \(CoachPrompts.workoutPlanPrompt)
+        """
+        
+        // Use higher token limit for plan generation (plans can be large)
+        let response = try await sendMessage(userMessage, maxTokens: 16384)
+        return try parseResponse(response)
+    }
 
-    private func sendMessage(_ userMessage: String) async throws -> String {
+    private func sendMessage(_ userMessage: String, maxTokens: Int = 4096) async throws -> String {
         guard let url = URL(string: baseURL) else {
             throw LLMError.invalidURL
         }
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        request.timeoutInterval = 120 // 2 minutes timeout for AI generation
+        request.timeoutInterval = 180 // 3 minutes timeout for large AI generation
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
 
         let body: [String: Any] = [
             "model": model,
-            "max_completion_tokens": 4096,
+            "max_completion_tokens": maxTokens,
             "response_format": ["type": "json_object"],
             "messages": [
                 ["role": "system", "content": CoachPrompts.systemPrompt],
@@ -126,6 +149,8 @@ class OpenAIProvider: LLMProvider {
     private func parseResponse<T: Decodable>(_ response: String) throws -> T {
         // Clean up response
         var cleaned = response.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        // Handle various markdown wrapping formats
         if cleaned.hasPrefix("```json") {
             cleaned = String(cleaned.dropFirst(7))
         } else if cleaned.hasPrefix("```") {
@@ -135,13 +160,37 @@ class OpenAIProvider: LLMProvider {
             cleaned = String(cleaned.dropLast(3))
         }
         cleaned = cleaned.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        // Try to extract JSON from response if it's mixed with text
+        if let jsonStart = cleaned.firstIndex(of: "{"),
+           let jsonEnd = cleaned.lastIndex(of: "}") {
+            cleaned = String(cleaned[jsonStart...jsonEnd])
+        }
 
         guard let data = cleaned.data(using: .utf8) else {
             throw LLMError.parseError("Could not convert response to data")
         }
 
         do {
-            return try JSONDecoder().decode(T.self, from: data)
+            let decoder = JSONDecoder()
+            return try decoder.decode(T.self, from: data)
+        } catch let decodingError as DecodingError {
+            let errorDetail: String
+            switch decodingError {
+            case .keyNotFound(let key, let context):
+                errorDetail = "Missing key '\(key.stringValue)' at \(context.codingPath.map { $0.stringValue }.joined(separator: "."))"
+            case .typeMismatch(let type, let context):
+                errorDetail = "Type mismatch for \(type) at \(context.codingPath.map { $0.stringValue }.joined(separator: "."))"
+            case .valueNotFound(let type, let context):
+                errorDetail = "Missing value of type \(type) at \(context.codingPath.map { $0.stringValue }.joined(separator: "."))"
+            case .dataCorrupted(let context):
+                errorDetail = "Data corrupted at \(context.codingPath.map { $0.stringValue }.joined(separator: ".")): \(context.debugDescription)"
+            @unknown default:
+                errorDetail = decodingError.localizedDescription
+            }
+            print("🔴 JSON Parse Error: \(errorDetail)")
+            print("🔴 Raw response (first 500 chars): \(String(cleaned.prefix(500)))")
+            throw LLMError.parseError("JSON decode failed: \(errorDetail)")
         } catch {
             throw LLMError.parseError("JSON decode failed: \(error.localizedDescription)")
         }

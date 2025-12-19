@@ -16,6 +16,7 @@ final class WorkoutSession {
 
     @Relationship var template: WorkoutTemplate?
     @Relationship(deleteRule: .cascade) var sets: [WorkoutSet]
+    @Relationship var planWeek: PlanWeek?
 
     init(
         id: UUID = UUID(),
